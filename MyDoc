@@ -1,0 +1,67 @@
+1-Prerequisites
+• Install Git for Windows (https://git-scm.com/)
+• Install Python 3.10+ and ensure python & pip are on your PATH
+• Install Node.js 16+ (includes npm)
+• Install PostgreSQL locally and create a database (e.g. fastapi_template_db)
+
+2-Clone the template
+Open PowerShell or Command Prompt and run:
+git clone https://github.com/tiangolo/full-stack-fastapi-postgresql.git
+This creates a folder full-stack-fastapi-postgresql
+
+3-Move/rename the project folder
+Either in Explorer or via CLI:
+move full-stack-fastapi-postgresql my-project
+cd into it:
+cd my-project
+
+4-Set up the Python (backend) environment
+After Moving the files to the InitKit Folder run those commande
+a. uv sync
+b. Create & activate a virtualenv:
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+if you get error { - Get-ExecutionPolicy - Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser - Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+}
+c. Install backend dependencies:
+python.exe -m pip install --upgrade pip
+
+5-Configure your database connection
+a. Edit .env, set:
+POSTGRES_SERVER=localhost
+POSTGRES_USER=your_pg_user
+POSTGRES_PASSWORD=your_pg_password
+POSTGRES_DB=fastapi_template_db
+(leave other settings as defaults or adjust as needed)
+
+6-Initialize and migrate the database
+From the project root:
+cd backend
+alembic upgrade head
+(This will create tables in your Postgres DB.)
+
+7-Run the FastAPI backend
+From backend folder, ensure your venv is active, then:
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+Visit http://localhost:8000/docs to confirm it’s working.
+
+8-Set up the React (frontend) app
+Open a new terminal, from project root:
+cd frontend
+npm install
+Copy or create your .env (e.g. .env.development) with at least:
+VITE_API_URL=http://localhost:8000
+Start the React dev server:
+npm run dev
+Visit http://localhost:3000 (or the port shown) to see the UI.
+
+9-Initialize your own GitHub repository
+a. On GitHub, create an empty repo (e.g. my-fastapi-template)
+b. In your project root, remove the origin and add yours:
+c. move the files
+d. Stage, commit and push:
+git init
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/BMTFormative/InitKit.git
+git push -u origin main
