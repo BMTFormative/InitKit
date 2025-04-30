@@ -44,7 +44,7 @@ class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
-
+    subscriptions: list["Subscription"] = Relationship(back_populates="owner", cascade_delete=True)
 
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
@@ -111,3 +111,40 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=40)
+
+# Shared properties for Subscription
+class SubscriptionBase(SQLModel):
+    name: str = Field(min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=255)
+    price: float = Field(ge=0)
+    is_active: bool = Field(default=True)
+
+
+# Properties to receive on subscription creation
+class SubscriptionCreate(SubscriptionBase):
+    pass
+
+
+# Properties to receive on subscription update
+class SubscriptionUpdate(SubscriptionBase):
+    name: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
+    price: float | None = Field(default=None, ge=0)
+    is_active: bool | None = None
+
+
+# Database model, database table inferred from class name
+class Subscription(SubscriptionBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    owner_id: uuid.UUID = Field(foreign_key="user.id", nullable=False, ondelete="CASCADE")
+    owner: User | None = Relationship(back_populates="subscriptions")
+
+
+# Properties to return via API, id is always required
+class SubscriptionPublic(SubscriptionBase):
+    id: uuid.UUID
+    owner_id: uuid.UUID
+
+
+class SubscriptionsPublic(SQLModel):
+    data: list[SubscriptionPublic]
+    count: int
