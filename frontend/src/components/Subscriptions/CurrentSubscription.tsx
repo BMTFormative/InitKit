@@ -72,7 +72,9 @@ const CurrentSubscription = () => {
 
           <Flex justify="space-between" align="center">
             <Text fontWeight="semibold">Start Date:</Text>
-            <Text>{format(new Date(subscription.start_date), "PPP")}</Text>
+            <Text>
+              {format(new Date(subscription.start_date || ""), "PPP")}
+            </Text>
           </Flex>
 
           <Flex justify="space-between" align="center">
