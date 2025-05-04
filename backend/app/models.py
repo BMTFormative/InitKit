@@ -1,8 +1,8 @@
 import uuid
 
 from pydantic import EmailStr
-from sqlmodel import Field, Relationship, SQLModel
-
+from sqlmodel import Field, Relationship, SQLModel,Column, JSON
+from datetime import datetime
 
 # Shared properties
 class UserBase(SQLModel):
@@ -44,7 +44,7 @@ class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
-
+    subscription: list["UserSubscription"] = Relationship(back_populates="user", cascade_delete=True)
 
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
@@ -111,3 +111,79 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=40)
+
+# Shared properties for SubscriptionPlan
+class SubscriptionPlanBase(SQLModel):
+    name: str = Field(min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=500)
+    price: float = Field(ge=0)
+    duration_days: int = Field(gt=0)
+    features: list[str] = Field(default=[], sa_column=Column(JSON))
+    is_active: bool = Field(default=True)
+
+
+# Properties to receive on plan creation
+class SubscriptionPlanCreate(SubscriptionPlanBase):
+    pass
+
+
+# Properties to receive on plan update
+class SubscriptionPlanUpdate(SQLModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=500)
+    price: float | None = Field(default=None, ge=0)
+    duration_days: int | None = Field(default=None, gt=0)
+    features: list[str] | None = Field(default=None, sa_column=Column(JSON))
+    is_active: bool | None = None
+
+
+# Database model for subscription plans
+class SubscriptionPlan(SubscriptionPlanBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+
+
+# Properties to return via API
+class SubscriptionPlanPublic(SubscriptionPlanBase):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class SubscriptionPlansPublic(SQLModel):
+    data: list[SubscriptionPlanPublic]
+    count: int
+
+
+# Shared properties for UserSubscription
+class UserSubscriptionBase(SQLModel):
+    plan_id: uuid.UUID = Field(foreign_key="subscriptionplan.id")
+    start_date: datetime = Field(default_factory=datetime.utcnow)
+    end_date: datetime
+    status: str = Field(default="active", max_length=50)
+
+
+# Properties to receive on subscription creation
+class UserSubscriptionCreate(SQLModel):
+    plan_id: uuid.UUID
+
+
+# Properties to receive on subscription update
+class UserSubscriptionUpdate(SQLModel):
+    status: str | None = Field(default=None, max_length=50)
+
+
+# Database model for user subscriptions
+class UserSubscription(UserSubscriptionBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(foreign_key="user.id", nullable=False, ondelete="CASCADE")
+    user: User | None = Relationship(back_populates="subscription")
+    plan: SubscriptionPlan | None = Relationship()
+
+
+# Properties to return via API
+class UserSubscriptionPublic(UserSubscriptionBase):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    plan: SubscriptionPlanPublic
