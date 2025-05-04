@@ -65,3 +65,12 @@ git commit -m "first commit"
 git branch -M main
 git remote add origin https://github.com/BMTFormative/InitKit.git
 git push -u origin main
+
+problem in migration
+rm -r backend/app/alembic/versions/\*.py
+alembic revision --autogenerate -m "initial_setup"
+alembic upgrade head
+
+to create subcription
+
+alembic revision --autogenerate -m "add subscription models"
