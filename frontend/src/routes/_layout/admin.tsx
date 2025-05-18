@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 
-import { type UserPublic, UsersService } from "@/client";
+import { UserPublic, UsersService } from "@/client";
 import AddUser from "@/components/Admin/AddUser";
 import { UserActionsMenu } from "@/components/Common/UserActionsMenu";
 import PendingUsers from "@/components/Pending/PendingUsers";
@@ -13,8 +13,12 @@ import {
   PaginationPrevTrigger,
   PaginationRoot,
 } from "@/components/ui/pagination.tsx";
+import TenantsManagement from "@/components/Admin/TenantsManagement";
+import TenantUserManagement from "@/components/Admin/TenantUserManagement";
+import TenantApiKeyManagement from "@/components/Admin/TenantApiKeyManagement";
+import CreditTransactions from "@/components/Admin/CreditTransactions";
 import SubscriptionPlanManagement from "@/components/Admin/SubscriptionPlanManagement";
-
+import { UserWithTenant } from "@/types/tenant";
 const tabsConfig = [
   { value: "users", title: "Users", component: UsersTable },
   {
@@ -45,7 +49,9 @@ export const Route = createFileRoute("/_layout/admin")({
 
 function UsersTable() {
   const queryClient = useQueryClient();
-  const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"]);
+  const currentUser = queryClient.getQueryData<UserPublic>([
+    "currentUser",
+  ]) as UserWithTenant | null;
   const navigate = useNavigate({ from: Route.fullPath });
   const { page } = Route.useSearch();
 
@@ -124,6 +130,20 @@ function UsersTable() {
 }
 
 function Admin() {
+  const queryClient = useQueryClient();
+  const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"]);
+  const isSuperAdmin = currentUser?.is_superuser;
+  const hasTenant = currentUser
+    ? "tenant_id" in currentUser && !!currentUser.tenant_id
+    : false;
+  const isTenantAdmin = currentUser
+    ? "role" in currentUser && currentUser.role === "tenant_admin"
+    : false;
+  {
+    (isSuperAdmin || (hasTenant && isTenantAdmin)) && (
+      <Tabs.Trigger value="users">Users</Tabs.Trigger>
+    );
+  }
   return (
     <Container maxW="full">
       <Heading size="lg" pt={12}>
@@ -132,18 +152,48 @@ function Admin() {
 
       <Tabs.Root defaultValue="users" variant="subtle" mt={4}>
         <Tabs.List>
-          <Tabs.Trigger value="users">Users</Tabs.Trigger>
-          <Tabs.Trigger value="subscriptions">Subscription Plans</Tabs.Trigger>
+          {isSuperAdmin && <Tabs.Trigger value="tenants">Tenants</Tabs.Trigger>}
+          {isSuperAdmin && (
+            <Tabs.Trigger value="subscription-plans">
+              Subscription Plans
+            </Tabs.Trigger>
+          )}
+          {(isSuperAdmin || (hasTenant && isTenantAdmin)) && (
+            <Tabs.Trigger value="users">Users</Tabs.Trigger>
+          )}
+          {hasTenant && <Tabs.Trigger value="api-keys">API Keys</Tabs.Trigger>}
+          {hasTenant && <Tabs.Trigger value="credits">Credits</Tabs.Trigger>}
         </Tabs.List>
 
-        <Tabs.Content value="users">
-          <AddUser />
-          <UsersTable />
-        </Tabs.Content>
+        {isSuperAdmin && (
+          <Tabs.Content value="tenants">
+            <TenantsManagement />
+          </Tabs.Content>
+        )}
 
-        <Tabs.Content value="subscriptions">
-          <SubscriptionPlanManagement />
-        </Tabs.Content>
+        {isSuperAdmin && (
+          <Tabs.Content value="subscription-plans">
+            <SubscriptionPlanManagement />
+          </Tabs.Content>
+        )}
+
+        {(isSuperAdmin || (hasTenant && isTenantAdmin)) && (
+          <Tabs.Content value="users">
+            <TenantUserManagement />
+          </Tabs.Content>
+        )}
+
+        {hasTenant && (
+          <Tabs.Content value="api-keys">
+            <TenantApiKeyManagement />
+          </Tabs.Content>
+        )}
+
+        {hasTenant && (
+          <Tabs.Content value="credits">
+            <CreditTransactions />
+          </Tabs.Content>
+        )}
       </Tabs.Root>
     </Container>
   );

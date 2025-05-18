@@ -15,6 +15,7 @@ import { Route as SignupImport } from './routes/signup'
 import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as RecoverPasswordImport } from './routes/recover-password'
 import { Route as LoginImport } from './routes/login'
+import { Route as AcceptInvitationImport } from './routes/accept-invitation'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
 import { Route as LayoutSubscriptionsImport } from './routes/_layout/subscriptions'
@@ -41,6 +42,11 @@ const RecoverPasswordRoute = RecoverPasswordImport.update({
 
 const LoginRoute = LoginImport.update({
   path: '/login',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AcceptInvitationRoute = AcceptInvitationImport.update({
+  path: '/accept-invitation',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -80,6 +86,10 @@ declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/_layout': {
       preLoaderRoute: typeof LayoutImport
+      parentRoute: typeof rootRoute
+    }
+    '/accept-invitation': {
+      preLoaderRoute: typeof AcceptInvitationImport
       parentRoute: typeof rootRoute
     }
     '/login': {
@@ -131,6 +141,7 @@ export const routeTree = rootRoute.addChildren([
     LayoutSubscriptionsRoute,
     LayoutIndexRoute,
   ]),
+  AcceptInvitationRoute,
   LoginRoute,
   RecoverPasswordRoute,
   ResetPasswordRoute,
