@@ -13,7 +13,7 @@ from app.models import (
 )
 from app.services.credit_service import CreditService
 
-router = APIRouter(prefix="/tenants", tags=["tenants"])
+router = APIRouter(tags=["tenants"])
 credit_service = CreditService()
 
 @router.post("/", response_model=TenantPublic)
