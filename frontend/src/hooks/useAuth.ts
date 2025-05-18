@@ -49,7 +49,7 @@ const useAuth = () => {
   const queryClient = useQueryClient();
   
   // Use the extended type here
-  const { data: user } = useQuery<UserWithTenant | null, Error>({
+    const { data: user } = useQuery<UserWithTenant | null, Error>({
     queryKey: ["currentUser"],
     queryFn: async () => {
       const userData = await UsersService.readUserMe();
@@ -72,7 +72,6 @@ const useAuth = () => {
     },
     enabled: isLoggedIn(),
   });
-
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegister) =>
       UsersService.registerUser({ requestBody: data }),

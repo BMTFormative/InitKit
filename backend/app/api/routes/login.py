@@ -40,9 +40,12 @@ def login_access_token(
     # Create token payload with role and tenant_id
     token_data = {
         "sub": str(user.id),
-        "role": user.role,
-        "tenant_id": str(user.tenant_id) if user.tenant_id else None
+        "role": user.role
     }
+    
+    # Only add tenant_id if it exists
+    if user.tenant_id:
+        token_data["tenant_id"] = str(user.tenant_id)
     
     return Token(
         access_token=security.create_access_token(
