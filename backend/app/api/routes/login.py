@@ -36,9 +36,17 @@ def login_access_token(
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    # Create token payload with role and tenant_id
+    token_data = {
+        "sub": str(user.id),
+        "role": user.role,
+        "tenant_id": str(user.tenant_id) if user.tenant_id else None
+    }
+    
     return Token(
         access_token=security.create_access_token(
-            user.id, expires_delta=access_token_expires
+            token_data, expires_delta=access_token_expires
         )
     )
 
