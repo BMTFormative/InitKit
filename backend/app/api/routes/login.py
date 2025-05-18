@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException ,Body
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -10,7 +10,7 @@ from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
-from app.models import Message, NewPassword, Token, UserPublic
+from app.models import Message, NewPassword, Token, UserPublic,UserCreate, User
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
@@ -122,3 +122,19 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
     return HTMLResponse(
         content=email_data.html_content, headers={"subject:": email_data.subject}
     )
+@router.post("/accept-invitation", response_model=UserPublic)
+def accept_invitation(
+    session: SessionDep,
+    token: str = Body(...),
+    user_data: UserCreate = Body(...),
+) -> User:
+    """
+    Accept an invitation and create a new user
+    """
+    invitation_service = InvitationService()
+    user = invitation_service.accept_invitation(
+        session,
+        token,
+        user_data
+    )
+    return user
