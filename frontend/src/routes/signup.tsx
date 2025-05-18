@@ -130,38 +130,39 @@ function SignUp() {
     },
   });
 
-  const onSubmit: SubmitHandler<UserRegisterForm> = async (data) => {
-    if (step === "form") {
-      // Move to plan selection
-      setStep("plans");
-      return;
+  // In the onSubmit handler of the signup form
+const onSubmit: SubmitHandler<UserRegisterForm> = async (data) => {
+  if (step === "form") {
+    // Move to plan selection
+    setStep("plans");
+    return;
+  }
+
+  try {
+    // First, sign up the user - this will create a tenant and user
+    const userResponse = await signUpMutation.mutateAsync(data);
+    
+    if (selectedPlanId) {
+      // After signup, subscribe to the selected plan
+      await subscribePlanMutation.mutateAsync({
+        planId: selectedPlanId,
+        userCredentials: {
+          email: data.email,
+          password: data.password,
+        },
+      });
+      showSuccessToast("Account created and subscription activated!");
+    } else {
+      showSuccessToast("Account created successfully!");
     }
 
-    try {
-      // First, sign up the user
-      await signUpMutation.mutateAsync(data);
-
-      if (selectedPlanId) {
-        // After signup, subscribe to the selected plan
-        await subscribePlanMutation.mutateAsync({
-          planId: selectedPlanId,
-          userCredentials: {
-            email: data.email,
-            password: data.password,
-          },
-        });
-        showSuccessToast("Account created and subscription activated!");
-      } else {
-        showSuccessToast("Account created successfully!");
-      }
-
-      // Redirect to login page
-      navigate({ to: "/login" });
-    } catch (error) {
-      showErrorToast("Failed to complete signup. Please try again.");
-      console.error(error);
-    }
-  };
+    // Redirect to login page
+    navigate({ to: "/login" });
+  } catch (error) {
+    showErrorToast("Failed to complete signup. Please try again.");
+    console.error(error);
+  }
+};
 
   const handlePlanSelect = (planId: string) => {
     setSelectedPlanId(planId);

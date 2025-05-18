@@ -81,6 +81,13 @@ def get_current_user_with_tenant(
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
         
+    # Ensure tenant_id from token matches user's tenant_id in database
+    if tenant_id and user.tenant_id and str(tenant_id) != str(user.tenant_id):
+        raise HTTPException(
+            status_code=403,
+            detail="Token tenant_id doesn't match user's tenant_id"
+        )
+        
     return user, tenant_id, role
 
 CurrentUserWithTenant = Annotated[tuple[User, uuid.UUID | None, str], Depends(get_current_user_with_tenant)]
