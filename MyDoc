@@ -40,7 +40,7 @@ cd backend
 alembic upgrade head
 (This will create tables in your Postgres DB.)
 
-7-Run the FastAPI backend
+# 7-Run the FastAPI backend
 From backend folder, ensure your venv is active, then:
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 Visit http://localhost:8000/docs to confirm it’s working.
