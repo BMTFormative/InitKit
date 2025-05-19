@@ -121,3 +121,40 @@ def verify_password_reset_token(token: str) -> str | None:
         return str(decoded_token["sub"])
     except InvalidTokenError:
         return None
+def send_test_email(
+    *,
+    email_to: str,
+    smtp_host: str,
+    smtp_port: int,
+    smtp_user: str,
+    smtp_password: str,
+    smtp_tls: bool = True,
+    from_email: str,
+    from_name: str,
+) -> None:
+    """Send a test email using custom SMTP settings"""
+    subject = f"{from_name} - Email Configuration Test"
+    html_content = render_email_template(
+        template_name="test_email.html",
+        context={
+            "project_name": from_name,
+            "email": email_to
+        },
+    )
+    
+    message = emails.Message(
+        subject=subject,
+        html=html_content,
+        mail_from=(from_name, from_email),
+    )
+    
+    smtp_options = {
+        "host": smtp_host,
+        "port": smtp_port,
+        "tls": smtp_tls,
+        "user": smtp_user,
+        "password": smtp_password,
+    }
+    
+    response = message.send(to=email_to, smtp=smtp_options)
+    logger.info(f"test email result: {response}")
