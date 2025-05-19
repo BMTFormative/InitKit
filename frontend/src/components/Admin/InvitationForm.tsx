@@ -1,4 +1,3 @@
-// frontend/src/components/Admin/InvitationForm.tsx
 import { 
   DialogRoot, 
   DialogContent, 
@@ -7,9 +6,9 @@ import {
   DialogBody, 
   DialogFooter, 
   DialogActionTrigger, 
-  DialogCloseTrigger, 
+  DialogCloseTrigger 
 } from "@/components/ui/dialog";
-import { Button, Input, Select, VStack, Alert ,Text } from "@chakra-ui/react";
+import { Button, Input, VStack, Select, Text, Alert } from "@chakra-ui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { Field } from "../ui/field";
@@ -59,7 +58,7 @@ const InvitationForm = ({ isOpen, onClose, tenantId }: InvitationFormProps) => {
       handleError(err);
     }
   });
-  const isTenantSelected = !!tenantId;
+
   const onSubmit: SubmitHandler<InvitationFormValues> = (data) => {
     invitationMutation.mutate(data);
   };
@@ -72,43 +71,40 @@ const InvitationForm = ({ isOpen, onClose, tenantId }: InvitationFormProps) => {
             <DialogTitle>Invite User</DialogTitle>
           </DialogHeader>
           <DialogBody>
-            {!isTenantSelected ? (
-              <Alert.Root status="warning">
-                <Text>Please select a tenant before inviting users</Text>
-              </Alert.Root>
-            ) : (
-              <VStack gap={4}>
-                <Field
-                  label="Email"
-                  required
-                  invalid={!!errors.email}
-                  errorText={errors.email?.message}
-                >
-                  <Input
-                    id="email"
-                    {...register("email", {
-                      required: "Email is required",
-                      pattern: emailPattern
-                    })}
-                    placeholder="Email"
-                    type="email"
-                  />
-                </Field>
+            <VStack gap={4}>
+              <Field
+                label="Email"
+                required
+                invalid={!!errors.email}
+                errorText={errors.email?.message}
+              >
+                <Input
+                  id="email"
+                  {...register("email", {
+                    required: "Email is required",
+                    pattern: emailPattern
+                  })}
+                  placeholder="Email"
+                  type="email"
+                />
+              </Field>
 
-                <Field
-                  label="Role"
-                  required
-                >
-                  <Select.ItemGroup
-                    id="role"
-                    {...register("role", { required: "Role is required" })}
-                  >
+              <Field
+                label="Role"
+                required
+              >
+                <Select.Root {...register("role", { required: "Role is required" })}>
+                  <Select.ItemGroup>
                     <option value="user">User</option>
                     <option value="tenant_admin">Tenant Admin</option>
                   </Select.ItemGroup>
-                </Field>
-              </VStack>
-            )}
+                </Select.Root>
+              </Field>
+              
+              <Text fontSize="sm" color="gray.500">
+                An invitation email will be sent to this address with instructions to join your organization.
+              </Text>
+            </VStack>
           </DialogBody>
 
           <DialogFooter gap={2}>
@@ -121,12 +117,7 @@ const InvitationForm = ({ isOpen, onClose, tenantId }: InvitationFormProps) => {
                 Cancel
               </Button>
             </DialogActionTrigger>
-            <Button 
-              type="submit" 
-              colorPalette="teal" 
-              loading={isSubmitting}
-              disabled={!isTenantSelected}
-            >
+            <Button type="submit" colorPalette="teal" loading={isSubmitting}>
               Send Invitation
             </Button>
           </DialogFooter>

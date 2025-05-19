@@ -1,4 +1,3 @@
-// frontend/src/services/tenant-user-service.ts
 import { 
   TenantUser, 
   TenantInvitation,
