@@ -144,7 +144,7 @@ def send_test_email(
     from_email: str,
     from_name: str,
 ) -> None:
-    """Send a test email using custom SMTP settings"""
+    """Send a test email using custom SMTP settings with improved debugging"""
     subject = f"{from_name} - Email Configuration Test"
     html_content = render_email_template(
         template_name="test_email.html",
@@ -163,10 +163,28 @@ def send_test_email(
     smtp_options = {
         "host": smtp_host,
         "port": smtp_port,
-        "tls": smtp_tls,
         "user": smtp_user,
         "password": smtp_password,
+        "debug": 1  # Enable SMTP level debugging
     }
     
-    response = message.send(to=email_to, smtp=smtp_options)
-    logger.info(f"test email result: {response}")
+    # Configure TLS properly
+    if smtp_tls:
+        smtp_options["tls"] = True
+    
+    try:
+        logger.info(f"Sending test email to {email_to} via {smtp_host}:{smtp_port}")
+        response = message.send(to=email_to, smtp=smtp_options)
+        
+        # More detailed logging
+        logger.info(f"Test email result: {response}")
+        logger.info(f"Response status: {getattr(response, 'status_code', None)}")
+        logger.info(f"Response body: {getattr(response, 'body', None)}")
+        
+        if not response.status_code or response.status_code != 250:
+            logger.error(f"Email sending failed with status: {getattr(response, 'status_code', 'unknown')}")
+            
+        return response
+    except Exception as e:
+        logger.error(f"Exception sending test email: {str(e)}", exc_info=True)
+        raise

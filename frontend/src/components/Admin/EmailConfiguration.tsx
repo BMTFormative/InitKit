@@ -1,16 +1,14 @@
 // frontend/src/components/Admin/EmailConfiguration.tsx
-import { useState } from "react";
+import { useEffect } from "react";
 import {
   Button,
   Input,
   VStack,
-  HStack,
-  Text,
+  Alert,
   Heading,
   Flex,
-  Alert,
-  Switch,
   NumberInput,
+  Link,
 } from "@chakra-ui/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type SubmitHandler, useForm, Controller } from "react-hook-form";
@@ -28,7 +26,7 @@ const EmailConfiguration = () => {
   const { showSuccessToast } = useCustomToast();
   const { user } = useAuth();
 
-  // Add type assertion and default to empty string if null/undefined
+  // Type assertion for user
   const typedUser = user as UserWithTenant | null;
   const tenantId = typedUser?.tenant_id ?? "";
 
@@ -44,12 +42,14 @@ const EmailConfiguration = () => {
     queryKey: ["email-config", tenantId],
     queryFn: () => EmailConfigService.getEmailConfig(tenantId),
     enabled: !!tenantId,
-    // onSuccess: (data) => {
-    //   if (data) {
-    //     reset(data);
-    //   }
-    // },
   });
+
+  // Use useEffect instead of onSuccess for TanStack Query v5
+  useEffect(() => {
+    if (emailConfig) {
+      reset(emailConfig);
+    }
+  }, [emailConfig, reset]);
 
   const saveConfigMutation = useMutation({
     mutationFn: (data: EmailConfig) =>
@@ -109,7 +109,7 @@ const EmailConfiguration = () => {
           >
             <Input
               {...register("smtp_host", { required: "SMTP host is required" })}
-              placeholder="smtp.example.com"
+              placeholder="smtp.gmail.com"
             />
           </Field>
 
@@ -143,12 +143,21 @@ const EmailConfiguration = () => {
               {...register("smtp_user", {
                 required: "SMTP username is required",
               })}
-              placeholder="your_username"
+              placeholder="your_username@gmail.com"
             />
           </Field>
 
           <Field
-            label="SMTP Password"
+            label="Gmail App Password"
+            helperText={
+              <Link
+                href="https://support.google.com/mail/?p=BadCredentials"
+                isExternal
+                color="teal.500"
+              >
+                Learn how to create an App Password
+              </Link>
+            }
             required
             invalid={!!errors.smtp_password}
             errorText={errors.smtp_password?.message}
@@ -156,9 +165,17 @@ const EmailConfiguration = () => {
             <Input
               type="password"
               {...register("smtp_password", {
-                required: "SMTP password is required",
+                required: "Gmail App Password is required",
+                minLength: {
+                  value: 16,
+                  message: "App Password should be 16 characters",
+                },
+                maxLength: {
+                  value: 16,
+                  message: "App Password should be 16 characters",
+                },
               })}
-              placeholder="●●●●●●●●●●"
+              placeholder="Enter your 16-character App Password"
             />
           </Field>
 
@@ -166,6 +183,7 @@ const EmailConfiguration = () => {
             <Controller
               control={control}
               name="smtp_use_tls"
+              defaultValue={true}
               render={({ field }) => (
                 <Checkbox
                   checked={field.value}
