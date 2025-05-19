@@ -1,9 +1,11 @@
-import { UserPublic as ClientUserPublic } from '@/client';
 // frontend/src/types/tenant.ts
+import { UserPublic as ClientUserPublic } from '@/client';
+
 export interface UserWithTenant extends ClientUserPublic {
   tenant_id?: string;
   role?: string;
 }
+
 export interface Tenant {
   id: string;
   name: string;

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from app.models import TenantInvitation, User, UserCreate
 from app.core.security import create_access_token, get_password_hash
+import jwt
 from app.core.config import settings
 
 class InvitationService:

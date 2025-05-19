@@ -19,19 +19,8 @@ import { InputGroup } from "@/components/ui/input-group";
 import { PasswordInput } from "@/components/ui/password-input";
 import { emailPattern, passwordRules, confirmPasswordRules } from "@/utils";
 import useCustomToast from "@/hooks/useCustomToast";
-import Logo from "/assets/images/Logo.svg";
-
-// Placeholder service that you'll need to implement
-const InvitationService = {
-  acceptInvitation: (data: any) => 
-    fetch(`${import.meta.env.VITE_API_URL}/api/v1/login/accept-invitation`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data)
-    }).then(res => res.json()),
-};
+import { InvitationService } from "@/services/invitation-service";
+import { AcceptInvitationInput } from "@/types/tenant";
 
 export const Route = createFileRoute("/accept-invitation")({
   component: AcceptInvitation,
@@ -92,16 +81,8 @@ function AcceptInvitation() {
   }, [setValue]);
 
   const acceptInvitationMutation = useMutation({
-    mutationFn: (data: AcceptInvitationForm) => {
-      // We only send what's needed to the backend
-      return InvitationService.acceptInvitation({
-        token,
-        user_data: {
-          email: data.email,
-          password: data.password,
-          full_name: data.full_name,
-        }
-      });
+    mutationFn: (data: AcceptInvitationInput) => {
+      return InvitationService.acceptInvitation(data);
     },
     onSuccess: () => {
       showSuccessToast("Account created successfully! You can now log in.");
@@ -113,14 +94,28 @@ function AcceptInvitation() {
   });
 
   const onSubmit: SubmitHandler<AcceptInvitationForm> = (data) => {
-    acceptInvitationMutation.mutate(data);
+    if (!token) {
+      setError("Invalid invitation token");
+      return;
+    }
+    
+    const invitationData: AcceptInvitationInput = {
+      token,
+      user_data: {
+        email: data.email,
+        password: data.password,
+        full_name: data.full_name,
+      }
+    };
+    
+    acceptInvitationMutation.mutate(invitationData);
   };
 
   if (error) {
     return (
       <Container maxW="sm" centerContent mt={20}>
         <Alert.Root status="error">
-          {error}
+          <Alert.Description>{error}</Alert.Description>
         </Alert.Root>
         <Button
           mt={4}
