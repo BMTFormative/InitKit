@@ -87,3 +87,13 @@ export interface AcceptInvitationInput {
   token: string;
   user_data: UserCreateInput;
 }
+
+export interface EmailConfig {
+  smtp_host: string;
+  smtp_port: number;
+  smtp_user: string;
+  smtp_password: string;
+  smtp_use_tls: boolean;
+  from_email: string;
+  from_name?: string;
+}

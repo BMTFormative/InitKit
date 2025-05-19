@@ -19,6 +19,8 @@ import TenantApiKeyManagement from "@/components/Admin/TenantApiKeyManagement";
 import CreditTransactions from "@/components/Admin/CreditTransactions";
 import SubscriptionPlanManagement from "@/components/Admin/SubscriptionPlanManagement";
 import { UserWithTenant } from "@/types/tenant";
+import EmailConfiguration from "@/components/Admin/EmailConfiguration";
+
 const tabsConfig = [
   { value: "users", title: "Users", component: UsersTable },
   {
@@ -150,19 +152,21 @@ function Admin() {
         <Tabs.List>
           {/* Only SuperAdmin can see Tenants tab */}
           {isSuperAdmin && <Tabs.Trigger value="tenants">Tenants</Tabs.Trigger>}
-          
+
           {/* Only SuperAdmin can see Subscription Plans tab */}
           {isSuperAdmin && (
             <Tabs.Trigger value="subscription-plans">
               Subscription Plans
             </Tabs.Trigger>
           )}
-          
+          {hasTenant && (
+            <Tabs.Trigger value="email">Email Settings</Tabs.Trigger>
+          )}
           {/* Both SuperAdmin and TenantAdmin can see Users tab */}
           {(isSuperAdmin || (hasTenant && isTenantAdmin)) && (
             <Tabs.Trigger value="users">Users</Tabs.Trigger>
           )}
-          
+
           {/* Tenant-related tabs visible to both SuperAdmin and TenantAdmin with a tenant */}
           {hasTenant && <Tabs.Trigger value="api-keys">API Keys</Tabs.Trigger>}
           {hasTenant && <Tabs.Trigger value="credits">Credits</Tabs.Trigger>}
@@ -196,6 +200,11 @@ function Admin() {
         {hasTenant && (
           <Tabs.Content value="credits">
             <CreditTransactions />
+          </Tabs.Content>
+        )}
+        {hasTenant && (
+          <Tabs.Content value="email">
+            <EmailConfiguration />
           </Tabs.Content>
         )}
       </Tabs.Root>

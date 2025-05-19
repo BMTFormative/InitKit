@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.api.routes import (
     items, login, private, users, utils, subscriptions,
-    tenants, tenant_users, tenant_api_keys, tenant_credits, ai_proxy
+    tenants, tenant_users, tenant_api_keys, tenant_credits, ai_proxy, tenant_email_config
 )
 from app.core.config import settings
 
@@ -13,6 +13,7 @@ api_router.include_router(utils.router, prefix="/utils", tags=["utils"])
 api_router.include_router(items.router, prefix="/items", tags=["items"])
 api_router.include_router(subscriptions.router, prefix="/subscriptions", tags=["subscriptions"])
 api_router.include_router(tenants.router, prefix="/tenants", tags=["tenants"])
+api_router.include_router(tenant_email_config.router)
 api_router.include_router(tenant_users.router)
 api_router.include_router(tenant_api_keys.router)
 api_router.include_router(tenant_credits.router)

@@ -51,6 +51,7 @@ class Tenant(TenantBase, table=True):
     users: list["User"] = Relationship(back_populates="tenant")
     api_keys: list["TenantApiKey"] = Relationship(back_populates="tenant", cascade_delete=True)
     credit_ledger: list["CreditTransaction"] = Relationship(back_populates="tenant", cascade_delete=True)
+    email_config: "EmailConfig" = Relationship(back_populates="tenant", sa_relationship_kwargs={"uselist": False})
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -296,3 +297,20 @@ class TenantInvitationPublic(SQLModel):
     created_at: datetime
     is_used: bool
     tenant_id: uuid.UUID
+
+# Email Configuration for Tenants
+class EmailConfigBase(SQLModel):
+    smtp_host: str
+    smtp_port: int = Field(default=587)
+    smtp_user: str
+    smtp_password: str
+    smtp_use_tls: bool = Field(default=True)
+    from_email: EmailStr
+    from_name: str | None = Field(default=None, max_length=255)
+
+class EmailConfig(EmailConfigBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", ondelete="CASCADE")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    tenant: "Tenant" = Relationship(back_populates="email_config")
