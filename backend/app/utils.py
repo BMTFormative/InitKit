@@ -23,9 +23,21 @@ class EmailData:
 
 
 def render_email_template(*, template_name: str, context: dict[str, Any]) -> str:
-    template_str = (
-        Path(__file__).parent / "email-templates" / "build" / template_name
-    ).read_text()
+    # Try to load compiled HTML template, fallback to MJML source if missing
+    base = Path(__file__).parent / "email-templates"
+    html_path = base / "build" / template_name
+    if html_path.exists():
+        template_str = html_path.read_text()
+    else:
+        # Fallback: look for MJML source with same name
+        mjml_name = Path(template_name).with_suffix('.mjml').name
+        mjml_path = base / "src" / mjml_name
+        if not mjml_path.exists():
+            # Neither HTML nor MJML exist
+            raise FileNotFoundError(f"Email template not found: {template_name}")
+        logger.warning(f"HTML template '{template_name}' not found, falling back to MJML '{mjml_name}'")
+        template_str = mjml_path.read_text()
+    # Render with Jinja2
     html_content = Template(template_str).render(context)
     return html_content
 
