@@ -44,34 +44,55 @@ class InvitationService:
             TenantInvitation.is_used == False
         )
         existing_invitation = session.exec(statement).first()
+        
+        # Create a unique invitation ID
+        invitation_id = str(uuid.uuid4())
+        
+        # Set expiration time
+        expires_at = datetime.utcnow() + timedelta(hours=expires_hours)
+        
         if existing_invitation:
             # Update existing invitation
-            existing_invitation.expires_at = datetime.utcnow() + timedelta(hours=expires_hours)
+            existing_invitation.expires_at = expires_at
             existing_invitation.created_by = created_by
             existing_invitation.role = role
+            
+            # Create optimized token with minimal payload
+            token_data = {
+                "sub": str(existing_invitation.id),  # Use existing ID
+                "tid": str(tenant_id),               # Tenant ID (shortened key name)
+                "eml": email,                        # User email (shortened key name)
+                "rol": role,                         # User role (shortened key name)
+                "inv": True,                         # Flag to identify as invitation token
+                "exp": expires_at.timestamp(),       # Expiration timestamp
+                "iat": datetime.utcnow().timestamp() # Issued at timestamp
+            }
+            
+            token = create_access_token(token_data, expires_delta=None)  # Use explicit expiration in payload
+            
+            existing_invitation.token = token
             session.add(existing_invitation)
             session.commit()
             session.refresh(existing_invitation)
             
             # We'll try to send the updated invitation email below
             invitation = existing_invitation
-            token = existing_invitation.token
         else:
-            # Create new invitation
-            expires_at = datetime.utcnow() + timedelta(hours=expires_hours)
+            # Create optimized token with minimal payload
             token_data = {
-                "sub": str(uuid.uuid4()),  # Temporary ID
-                "tenant_id": str(tenant_id),
-                "email": email,
-                "role": role,
-                "invitation": True
+                "sub": invitation_id,                # Unique ID for this invitation
+                "tid": str(tenant_id),               # Tenant ID (shortened key name)
+                "eml": email,                        # User email (shortened key name)
+                "rol": role,                         # User role (shortened key name)
+                "inv": True,                         # Flag to identify as invitation token
+                "exp": expires_at.timestamp(),       # Expiration timestamp
+                "iat": datetime.utcnow().timestamp() # Issued at timestamp
             }
-            token = create_access_token(
-                token_data, 
-                timedelta(hours=expires_hours)
-            )
+            
+            token = create_access_token(token_data, expires_delta=None)  # Use explicit expiration in payload
             
             invitation = TenantInvitation(
+                id=uuid.UUID(invitation_id),  # Use same ID as in token
                 tenant_id=tenant_id,
                 email=email,
                 role=role,
@@ -138,12 +159,14 @@ class InvitationService:
                     "tls": email_config.smtp_use_tls,
                     "user": email_config.smtp_user,
                     "password": email_config.smtp_password,
+                    "debug": 1  # Enable SMTP level debugging
                 }
                 
                 response = message.send(to=email, smtp=smtp_options)
                 logger.info(f"Invitation email sent using tenant configuration: {response}")
+                logger.info(f"SMTP Response status: {getattr(response, 'status_code', None)}")
             except Exception as e:
-                logger.error(f"Failed to send invitation email using tenant configuration: {str(e)}")
+                logger.error(f"Failed to send invitation email using tenant configuration: {str(e)}", exc_info=True)
                 # Continue even if email fails - the invitation is still created
         elif settings.emails_enabled:
             # Fall back to system email configuration
@@ -156,7 +179,8 @@ class InvitationService:
                 
                 smtp_options = {
                     "host": settings.SMTP_HOST, 
-                    "port": settings.SMTP_PORT
+                    "port": settings.SMTP_PORT,
+                    "debug": 1  # Enable SMTP level debugging
                 }
                 
                 if settings.SMTP_TLS:
@@ -172,8 +196,9 @@ class InvitationService:
                 
                 response = message.send(to=email, smtp=smtp_options)
                 logger.info(f"Invitation email sent using system configuration: {response}")
+                logger.info(f"SMTP Response status: {getattr(response, 'status_code', None)}")
             except Exception as e:
-                logger.error(f"Failed to send invitation email using system configuration: {str(e)}")
+                logger.error(f"Failed to send invitation email using system configuration: {str(e)}", exc_info=True)
         else:
             logger.warning("No email configuration available. Invitation created but email not sent.")
         
@@ -188,40 +213,61 @@ class InvitationService:
         """
         Accept an invitation and create a new user in the tenant.
         """
-        # Validate token
+        # Validate token with improved error handling
         try:
+            # Decode the token with explicit algorithms
             payload = jwt.decode(
                 token, 
                 settings.SECRET_KEY, 
-                algorithms=["HS256"]
+                algorithms=["HS256"],
+                options={"verify_signature": True, "verify_exp": True}
             )
-            if not payload.get("invitation"):
+            
+            # Validate it's an invitation token
+            if not payload.get("inv"):
                 raise HTTPException(
                     status_code=400,
-                    detail="Invalid invitation token"
+                    detail="Invalid invitation token type"
                 )
                 
-            email = payload.get("email")
-            tenant_id = payload.get("tenant_id")
-            role = payload.get("role", "user")
+            # Extract data using shortened key names
+            invitation_id = payload.get("sub")
+            email = payload.get("eml")
+            tenant_id = payload.get("tid")
+            role = payload.get("rol", "user")
             
-            # Find invitation
-            statement = select(TenantInvitation).where(
-                TenantInvitation.email == email,
-                TenantInvitation.tenant_id == uuid.UUID(tenant_id),
-                TenantInvitation.is_used == False
-            )
-            invitation = session.exec(statement).first()
+            if not all([invitation_id, email, tenant_id]):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Incomplete invitation token"
+                )
+            
+            # Find invitation by ID for better security
+            invitation = session.get(TenantInvitation, uuid.UUID(invitation_id))
             if not invitation:
                 raise HTTPException(
                     status_code=404,
-                    detail="Invitation not found or already used"
+                    detail="Invitation not found"
+                )
+                
+            # Additional validations
+            if invitation.is_used:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Invitation has already been used"
                 )
                 
             if invitation.expires_at < datetime.utcnow():
                 raise HTTPException(
                     status_code=400,
                     detail="Invitation has expired"
+                )
+                
+            # Verify email matches between token and invitation record
+            if invitation.email.lower() != email.lower():
+                raise HTTPException(
+                    status_code=400,
+                    detail="Token email mismatch"
                 )
                 
             # Ensure user email matches invitation email
@@ -260,21 +306,27 @@ class InvitationService:
             session.refresh(user)
             
             # Send welcome email
-            self._send_welcome_email(session, tenant_id, user)
+            self._send_welcome_email(session, uuid.UUID(tenant_id), user)
             
             return user
             
-        except jwt.PyJWTError as e:
-            logger.error(f"JWT error in accept_invitation: {str(e)}")
+        except jwt.ExpiredSignatureError:
+            logger.warning(f"Expired invitation token attempted")
             raise HTTPException(
                 status_code=400,
-                detail="Invalid invitation token"
+                detail="Invitation token has expired"
+            )
+        except jwt.InvalidTokenError as e:
+            logger.error(f"Invalid JWT token in accept_invitation: {str(e)}")
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid invitation token format"
             )
         except Exception as e:
-            logger.error(f"Error in accept_invitation: {str(e)}")
+            logger.error(f"Error in accept_invitation: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=500,
-                detail=f"Error accepting invitation: {str(e)}"
+                detail=f"Error accepting invitation"
             )
     
     def _send_welcome_email(
@@ -333,10 +385,12 @@ class InvitationService:
                     "tls": email_config.smtp_use_tls,
                     "user": email_config.smtp_user,
                     "password": email_config.smtp_password,
+                    "debug": 1  # Enable SMTP level debugging
                 }
                 
                 response = message.send(to=user.email, smtp=smtp_options)
                 logger.info(f"Welcome email sent using tenant configuration: {response}")
+                logger.info(f"SMTP Response status: {getattr(response, 'status_code', None)}")
             elif settings.emails_enabled:
                 # Fall back to system email configuration
                 message = emails.Message(
@@ -347,7 +401,8 @@ class InvitationService:
                 
                 smtp_options = {
                     "host": settings.SMTP_HOST, 
-                    "port": settings.SMTP_PORT
+                    "port": settings.SMTP_PORT,
+                    "debug": 1  # Enable SMTP level debugging
                 }
                 
                 if settings.SMTP_TLS:
@@ -363,6 +418,7 @@ class InvitationService:
                 
                 response = message.send(to=user.email, smtp=smtp_options)
                 logger.info(f"Welcome email sent using system configuration: {response}")
+                logger.info(f"SMTP Response status: {getattr(response, 'status_code', None)}")
         except Exception as e:
-            logger.error(f"Failed to send welcome email: {str(e)}")
+            logger.error(f"Failed to send welcome email: {str(e)}", exc_info=True)
             # Ignore errors in welcome email - user is still created
