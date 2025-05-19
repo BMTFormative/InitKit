@@ -1,12 +1,12 @@
-import { 
-  DialogRoot, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogBody, 
-  DialogFooter, 
-  DialogActionTrigger, 
-  DialogCloseTrigger 
+import {
+  DialogRoot,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogActionTrigger,
+  DialogCloseTrigger,
 } from "@/components/ui/dialog";
 import { Button, Input, VStack, Select, Text, Alert } from "@chakra-ui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,9 +15,9 @@ import { Field } from "../ui/field";
 import useCustomToast from "@/hooks/useCustomToast";
 import { handleError } from "@/utils";
 import { emailPattern } from "@/utils";
-import { TenantUserService } from '@/services/tenant-user-service';
-import { InvitationCreateInput } from '@/types/tenant';
-
+import { TenantUserService } from "@/services/tenant-user-service";
+import { InvitationCreateInput } from "@/types/tenant";
+import { createListCollection } from "@chakra-ui/react";
 interface InvitationFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,24 +29,30 @@ interface InvitationFormValues {
   role: string;
 }
 
+const roleOptions = createListCollection({
+  items: [
+    { label: "User", value: "user" },
+    { label: "Tenant Admin", value: "tenant_admin" },
+  ],
+});
 const InvitationForm = ({ isOpen, onClose, tenantId }: InvitationFormProps) => {
   const queryClient = useQueryClient();
   const { showSuccessToast } = useCustomToast();
-  
+
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting }
+    formState: { errors, isSubmitting },
   } = useForm<InvitationFormValues>({
     defaultValues: {
       email: "",
-      role: "user"
-    }
+      role: "user",
+    },
   });
 
   const invitationMutation = useMutation({
-    mutationFn: (data: InvitationCreateInput) => 
+    mutationFn: (data: InvitationCreateInput) =>
       TenantUserService.createInvitation({ tenantId, data }),
     onSuccess: () => {
       showSuccessToast("Invitation sent successfully");
@@ -56,7 +62,7 @@ const InvitationForm = ({ isOpen, onClose, tenantId }: InvitationFormProps) => {
     },
     onError: (err: any) => {
       handleError(err);
-    }
+    },
   });
 
   const onSubmit: SubmitHandler<InvitationFormValues> = (data) => {
@@ -82,27 +88,42 @@ const InvitationForm = ({ isOpen, onClose, tenantId }: InvitationFormProps) => {
                   id="email"
                   {...register("email", {
                     required: "Email is required",
-                    pattern: emailPattern
+                    pattern: emailPattern,
                   })}
                   placeholder="Email"
                   type="email"
                 />
               </Field>
 
-              <Field
-                label="Role"
-                required
-              >
-                <Select.Root {...register("role", { required: "Role is required" })}>
-                  <Select.ItemGroup>
-                    <option value="user">User</option>
-                    <option value="tenant_admin">Tenant Admin</option>
-                  </Select.ItemGroup>
+              <Field label="Role" required>
+                <Select.Root
+                  collection={roleOptions}
+                  {...register("role", { required: "Role is required" })}
+                >
+                  <Select.Control>
+                    <Select.Trigger>
+                      <Select.ValueText />
+                    </Select.Trigger>
+                    <Select.IndicatorGroup>
+                      <Select.Indicator />
+                    </Select.IndicatorGroup>
+                  </Select.Control>
+                  <Select.Positioner>
+                    <Select.Content>
+                      {roleOptions.items.map((option) => (
+                        <Select.Item key={option.value} item={option}>
+                          {option.label}
+                          <Select.ItemIndicator />
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Positioner>
                 </Select.Root>
               </Field>
-              
+
               <Text fontSize="sm" color="gray.500">
-                An invitation email will be sent to this address with instructions to join your organization.
+                An invitation email will be sent to this address with
+                instructions to join your organization.
               </Text>
             </VStack>
           </DialogBody>

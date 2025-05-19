@@ -10,6 +10,7 @@ import {
   Heading,
   Flex,
   Select,
+  createListCollection,
 } from "@chakra-ui/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FiPlus, FiTrash2 } from "react-icons/fi";
@@ -19,9 +20,16 @@ import InvitationForm from "./InvitationForm";
 import { UserActionsMenu } from "../Common/UserActionsMenu";
 import { TenantUserService } from "@/services/tenant-user-service";
 import { TenantUser, TenantInvitation } from "@/types/tenant";
-import { UserPublic } from "@/client";
 import useCustomToast from "@/hooks/useCustomToast";
 import { UserWithTenant } from "@/types/tenant";
+
+// Define the collection of view mode options
+const viewModeOptions = createListCollection({
+  items: [
+    { label: "Users", value: "users" },
+    { label: "Pending Invitations", value: "invitations" },
+  ],
+});
 
 const TenantUserManagement = () => {
   const [isInvitationOpen, setIsInvitationOpen] = useState(false);
@@ -85,15 +93,31 @@ const TenantUserManagement = () => {
       <Flex justify="space-between" align="center">
         <Heading size="md">User Management</Heading>
         <HStack>
+          {/* FIXED: Select component with proper collection implementation */}
           <Select.Root 
-            value={viewMode} 
-            onChange={(e) => setViewMode(e.target.value)}
-            width="auto"
+            collection={viewModeOptions}
+            value={[viewMode]} 
+            onValueChange={(e) => setViewMode(e.value[0])}
+            width="60"
           >
-            <Select.ItemGroup>
-              <option value="users">Users</option>
-              <option value="invitations">Pending Invitations</option>
-            </Select.ItemGroup>
+            <Select.Control>
+              <Select.Trigger>
+                <Select.ValueText />
+              </Select.Trigger>
+              <Select.IndicatorGroup>
+                <Select.Indicator />
+              </Select.IndicatorGroup>
+            </Select.Control>
+            <Select.Positioner>
+              <Select.Content>
+                {viewModeOptions.items.map((option) => (
+                  <Select.Item key={option.value} item={option}>
+                    {option.label}
+                    <Select.ItemIndicator />
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Positioner>
           </Select.Root>
           <Button colorPalette="teal" onClick={() => setIsInvitationOpen(true)}>
             <FiPlus />
