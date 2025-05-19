@@ -20,11 +20,15 @@ app = FastAPI(
     generate_unique_id_function=custom_generate_unique_id,
 )
 
-# Set all CORS enabled origins
-if settings.all_cors_origins:
+# Configure CORS middleware
+cors_origins = settings.all_cors_origins
+# For local development, allow all origins
+if settings.ENVIRONMENT == "local":  # pragma: no cover
+    cors_origins = ["*"]
+if cors_origins:
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.all_cors_origins,
+        allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
