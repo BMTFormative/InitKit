@@ -131,7 +131,7 @@ function UsersTable() {
 
 function Admin() {
   const queryClient = useQueryClient();
-  const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"]);
+  const currentUser = queryClient.getQueryData<UserWithTenant>(["currentUser"]);
   const isSuperAdmin = currentUser?.is_superuser;
   const hasTenant = currentUser
     ? "tenant_id" in currentUser && !!currentUser.tenant_id
@@ -139,11 +139,7 @@ function Admin() {
   const isTenantAdmin = currentUser
     ? "role" in currentUser && currentUser.role === "tenant_admin"
     : false;
-  {
-    (isSuperAdmin || (hasTenant && isTenantAdmin)) && (
-      <Tabs.Trigger value="users">Users</Tabs.Trigger>
-    );
-  }
+
   return (
     <Container maxW="full">
       <Heading size="lg" pt={12}>
@@ -152,19 +148,27 @@ function Admin() {
 
       <Tabs.Root defaultValue="users" variant="subtle" mt={4}>
         <Tabs.List>
+          {/* Only SuperAdmin can see Tenants tab */}
           {isSuperAdmin && <Tabs.Trigger value="tenants">Tenants</Tabs.Trigger>}
+          
+          {/* Only SuperAdmin can see Subscription Plans tab */}
           {isSuperAdmin && (
             <Tabs.Trigger value="subscription-plans">
               Subscription Plans
             </Tabs.Trigger>
           )}
+          
+          {/* Both SuperAdmin and TenantAdmin can see Users tab */}
           {(isSuperAdmin || (hasTenant && isTenantAdmin)) && (
             <Tabs.Trigger value="users">Users</Tabs.Trigger>
           )}
+          
+          {/* Tenant-related tabs visible to both SuperAdmin and TenantAdmin with a tenant */}
           {hasTenant && <Tabs.Trigger value="api-keys">API Keys</Tabs.Trigger>}
           {hasTenant && <Tabs.Trigger value="credits">Credits</Tabs.Trigger>}
         </Tabs.List>
 
+        {/* Tab contents with conditional rendering */}
         {isSuperAdmin && (
           <Tabs.Content value="tenants">
             <TenantsManagement />

@@ -16,6 +16,7 @@ from app.services.invitation_service import InvitationService
 router = APIRouter(prefix="/tenants/{tenant_id}/users", tags=["tenant users"])
 invitation_service = InvitationService()
 
+# app/api/routes/tenant_users.py
 @router.get("/", response_model=List[UserPublic])
 def list_tenant_users(
     tenant: TenantFromPath,

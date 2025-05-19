@@ -11,6 +11,7 @@ import {
 import type { IconType } from "react-icons/lib";
 
 import type { UserPublic } from "@/client";
+import { UserWithTenant } from "@/types/tenant";
 
 const items = [
   { icon: FiHome, title: "Dashboard", path: "/" },
@@ -31,12 +32,25 @@ interface Item {
 
 const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   const queryClient = useQueryClient();
-  const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"]);
+  const currentUser = queryClient.getQueryData<UserWithTenant>(["currentUser"]);
+  const isSuperAdmin = currentUser?.is_superuser;
+  const isTenantAdmin = currentUser?.role === "tenant_admin";
+  const hasTenant = !!currentUser?.tenant_id;
 
-  const finalItems: Item[] = currentUser?.is_superuser
+  // Show admin link to both superadmins and tenant admins
+  const showAdminLink = isSuperAdmin || isTenantAdmin;
+
+  const finalItems: Item[] = showAdminLink
     ? [...items, { icon: FiUsers, title: "Admin", path: "/admin" }]
     : items;
-
+// Add tenant user management for tenant admins
+  if (isTenantAdmin && hasTenant) {
+    finalItems.push({ icon: FiUsers, title: "Tenant Users", path: "/tenant-users" });
+  }
+  // Add admin dashboard for superadmins
+  if (isSuperAdmin) {
+    finalItems.push({ icon: FiUsers, title: "Admin", path: "/admin" });
+  }
   const listItems = finalItems.map(({ icon, title, path }) => (
     <RouterLink key={title} to={path} onClick={onClose}>
       <Flex

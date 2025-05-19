@@ -18,6 +18,7 @@ import { Route as LoginImport } from './routes/login'
 import { Route as AcceptInvitationImport } from './routes/accept-invitation'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
+import { Route as LayoutTenantUsersImport } from './routes/_layout/tenant-users'
 import { Route as LayoutSubscriptionsImport } from './routes/_layout/subscriptions'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
 import { Route as LayoutItemsImport } from './routes/_layout/items'
@@ -57,6 +58,11 @@ const LayoutRoute = LayoutImport.update({
 
 const LayoutIndexRoute = LayoutIndexImport.update({
   path: '/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutTenantUsersRoute = LayoutTenantUsersImport.update({
+  path: '/tenant-users',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -124,6 +130,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSubscriptionsImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/tenant-users': {
+      preLoaderRoute: typeof LayoutTenantUsersImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/': {
       preLoaderRoute: typeof LayoutIndexImport
       parentRoute: typeof LayoutImport
@@ -139,6 +149,7 @@ export const routeTree = rootRoute.addChildren([
     LayoutItemsRoute,
     LayoutSettingsRoute,
     LayoutSubscriptionsRoute,
+    LayoutTenantUsersRoute,
     LayoutIndexRoute,
   ]),
   AcceptInvitationRoute,
