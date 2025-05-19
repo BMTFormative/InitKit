@@ -10,6 +10,8 @@ import {
   Heading,
   Flex,
   NativeSelect,
+  Alert,
+  Text,
 } from "@chakra-ui/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FiPlus, FiTrash2 } from "react-icons/fi";
@@ -18,10 +20,11 @@ import { SkeletonText } from "../ui/skeleton";
 import InvitationForm from "./InvitationForm";
 import { UserActionsMenu } from "../Common/UserActionsMenu";
 import { TenantUserService } from "@/services/tenant-user-service";
-import { TenantUser, TenantInvitation } from "@/types/tenant";
+import { TenantUser, TenantInvitation, Tenant } from "@/types/tenant";
 import { UserPublic } from "@/client";
 import useCustomToast from "@/hooks/useCustomToast";
 import { UserWithTenant } from "@/types/tenant";
+import { TenantService } from "@/services/tenant-service";
 
 const TenantUserManagement = () => {
   const [isInvitationOpen, setIsInvitationOpen] = useState(false);
@@ -33,17 +36,30 @@ const TenantUserManagement = () => {
   // Add type assertion and default to empty string if null/undefined
   const typedUser = user as UserWithTenant | null;
   const tenantId = typedUser?.tenant_id ?? "";
+  const isSuperAdmin = typedUser?.is_superuser ?? false;
+  // For tenant admins, they should see their own tenant
+  // For super admins, they need to select a tenant
+  const [selectedTenantId, setSelectedTenantId] = useState<string>(tenantId);
+  // Load tenants list for super admin
+  const { data: tenants } = useQuery({
+    queryKey: ["tenants"],
+    queryFn: () => TenantService.listTenants(),
+    enabled: isSuperAdmin, // Only load tenants for super admin
+  });
+
+  // Use the selected tenant ID (for super admin) or the user's tenant ID (for tenant admin)
+  const effectiveTenantId = isSuperAdmin ? selectedTenantId : tenantId;
 
   const { data: users, isLoading: usersLoading } = useQuery({
-    queryKey: ["tenant-users", tenantId],
-    queryFn: () => TenantUserService.listTenantUsers(tenantId),
-    enabled: !!tenantId && viewMode === "users",
+    queryKey: ["tenant-users", effectiveTenantId],
+    queryFn: () => TenantUserService.listTenantUsers(effectiveTenantId),
+    enabled: !!effectiveTenantId && viewMode === "users",
   });
 
   const { data: invitations, isLoading: invitationsLoading } = useQuery({
-    queryKey: ["tenant-invitations", tenantId],
-    queryFn: () => TenantUserService.listInvitations(tenantId),
-    enabled: !!tenantId && viewMode === "invitations",
+    queryKey: ["tenant-invitations", effectiveTenantId],
+    queryFn: () => TenantUserService.listInvitations(effectiveTenantId),
+    enabled: !!effectiveTenantId && viewMode === "invitations",
   });
 
   const deleteInvitationMutation = useMutation({
@@ -79,12 +95,33 @@ const TenantUserManagement = () => {
   if (isLoading) {
     return <SkeletonText noOfLines={10} gap="4" />;
   }
+const TenantSelector = () => {
+    if (!isSuperAdmin || !tenants || tenants.length === 0) return null;
 
+    
+    return (
+      <NativeSelect.Field
+        value={selectedTenantId}
+        onChange={(e) => setSelectedTenantId(e.target.value)}
+        placeholder="Select a tenant"
+        maxW="xs"
+      >
+        {tenants.map((tenant: Tenant) => (
+          <option key={tenant.id} value={tenant.id}>
+            {tenant.name}
+          </option>
+        ))}
+      </NativeSelect.Field>
+    );
+  };
   return (
     <VStack align="stretch" gap={6}>
       <Flex justify="space-between" align="center">
         <Heading size="md">User Management</Heading>
         <HStack>
+          {/* Show tenant selector for super admin */}
+          {isSuperAdmin && <TenantSelector />}
+          
           <NativeSelect.Field
             value={viewMode}
             onChange={(e) => setViewMode(e.target.value)}
@@ -93,12 +130,24 @@ const TenantUserManagement = () => {
             <option value="users">Users</option>
             <option value="invitations">Pending Invitations</option>
           </NativeSelect.Field>
-          <Button colorPalette="teal" onClick={() => setIsInvitationOpen(true)}>
+          
+          <Button 
+            colorPalette="teal" 
+            onClick={() => setIsInvitationOpen(true)}
+            disabled={!effectiveTenantId} // Disable if no tenant selected
+          >
             <FiPlus />
             Invite User
           </Button>
         </HStack>
       </Flex>
+
+      {/* Show message if no tenant selected */}
+      {isSuperAdmin && !effectiveTenantId && (
+        <Alert.Root status="info">
+          <Text>Please select a tenant to manage users</Text>
+        </Alert.Root>
+      )}
 
       {viewMode === "users" ? (
         <Table.Root>
@@ -183,7 +232,7 @@ const TenantUserManagement = () => {
       <InvitationForm
         isOpen={isInvitationOpen}
         onClose={() => setIsInvitationOpen(false)}
-        tenantId={tenantId}
+        tenantId={effectiveTenantId}
       />
     </VStack>
   );

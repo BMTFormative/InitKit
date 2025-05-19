@@ -80,15 +80,13 @@ alembic revision --autogenerate -m "add subscription models"
 
 ---
 
-How to Run Backend
+# How to Run Backend
 .venv\Scripts\Activate.ps1
-
-
+uvicorn app.main:app --reload
+# How to Run Frontend
 how to run frontend
 npm run dev
-
-
-how to  Reset Alembic
+# how to  Reset Alembic
 # For PostgreSQL
 psql -U your_username -d your_database_name -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 # Remove all files in the versions directory (except __init__.py)
