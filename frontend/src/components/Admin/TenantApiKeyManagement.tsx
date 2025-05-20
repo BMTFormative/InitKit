@@ -53,10 +53,6 @@ const TenantApiKeyManagement = () => {
   // Add type assertion and default to empty string if null/undefined
   const typedUser = user as UserWithTenant | null;
   const isSuperAdmin = !!typedUser?.is_superuser;
-  // Super-admins use the global API key management interface
-  if (isSuperAdmin) {
-    return <GlobalApiKeyManagement />;
-  }
   // For tenant admins, use their tenant; for super-admins, allow selecting a tenant
   const {
     data: tenants,
@@ -270,7 +266,7 @@ const TenantApiKeyManagement = () => {
                   />
                 </Field>
                 <Text fontSize="sm" color="gray.500">
-                  Your API key will be encrypted and stored securely. It will
+                  Your API key will be stored securely in plaintext. It will
                   only be used server-side to make API calls and will never be
                   exposed to clients.
                 </Text>

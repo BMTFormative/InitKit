@@ -29,12 +29,15 @@ def create_admin_api_key(
         key_data.provider,
         key_data.api_key,
     )
+    # Return key value in response for display
+    raw = service.decrypt_key(key.encrypted_key)
     return AdminApiKeyPublic(
         id=key.id,
         provider=key.provider,
         is_active=key.is_active,
         created_at=key.created_at,
         last_used=key.last_used,
+        api_key=raw,
     )
 
 @router.get("/", response_model=List[AdminApiKeyPublic])
@@ -45,16 +48,21 @@ def list_admin_api_keys(
     """List all global API keys (super-admin only)."""
     statement = select(AdminApiKey)
     keys = session.exec(statement).all()
-    return [
-        AdminApiKeyPublic(
-            id=key.id,
-            provider=key.provider,
-            is_active=key.is_active,
-            created_at=key.created_at,
-            last_used=key.last_used,
+    result: List[AdminApiKeyPublic] = []
+    for key in keys:
+        # Decrypt stored key for display
+        raw = service.decrypt_key(key.encrypted_key)
+        result.append(
+            AdminApiKeyPublic(
+                id=key.id,
+                provider=key.provider,
+                is_active=key.is_active,
+                created_at=key.created_at,
+                last_used=key.last_used,
+                api_key=raw,
+            )
         )
-        for key in keys
-    ]
+    return result
 
 @router.delete("/{key_id}", response_model=Message)
 def delete_admin_api_key(
@@ -96,10 +104,13 @@ def update_admin_api_key_status(
     session.add(key)
     session.commit()
     session.refresh(key)
+    # Include raw key for display
+    raw = service.decrypt_key(key.encrypted_key)
     return AdminApiKeyPublic(
         id=key.id,
         provider=key.provider,
         is_active=key.is_active,
         created_at=key.created_at,
         last_used=key.last_used,
+        api_key=raw,
     )
