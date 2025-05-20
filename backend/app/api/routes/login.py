@@ -11,7 +11,7 @@ from app.core import security
 from app.services.invitation_service import InvitationService
 from app.core.config import settings
 from app.core.security import get_password_hash
-from app.models import Message, NewPassword, Token, UserPublic, UserCreate, User, TenantApiKey
+from app.models import Message, NewPassword, Token, UserPublic, UserCreate, User
 from app.services.api_key_service import ApiKeyService
 from sqlmodel import select
 from app.utils import (
@@ -56,24 +56,21 @@ def login_access_token(
     token_str = security.create_access_token(
         token_data, expires_delta=access_token_expires
     )
-    # On first login, assign a global OpenAI key to this tenant if none exists
+    # On first login, give the tenant an active Admin API key if they have none
     if user.tenant_id:
-        stmt = select(TenantApiKey).where(
-            TenantApiKey.tenant_id == user.tenant_id,
-            TenantApiKey.provider == "openai",
-            TenantApiKey.is_active == True,
+        # Check if tenant already has an active OpenAI key
+        existing = api_key_service.get_active_key_for_tenant(
+            session, user.tenant_id, "openai"
         )
-        existing = session.exec(stmt).first()
         if not existing:
-            stmt_global = select(TenantApiKey).where(
-                TenantApiKey.provider == "openai",
-                TenantApiKey.is_active == True,
+            # Fetch the active global (Admin) OpenAI key
+            global_key = api_key_service.get_active_admin_key(
+                session, "openai"
             )
-            global_key = session.exec(stmt_global).first()
             if global_key:
-                raw_key = api_key_service.decrypt_key(global_key.encrypted_key)
+                # Attach a copy to this tenant
                 api_key_service.create_tenant_api_key(
-                    session, user.tenant_id, "openai", raw_key
+                    session, user.tenant_id, "openai", global_key
                 )
     return Token(access_token=token_str)
 

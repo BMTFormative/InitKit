@@ -142,14 +142,7 @@ const GlobalApiKeyManagement = () => {
                   : "Never used"}
               </Table.Cell>
               <Table.Cell>
-                <IconButton
-                  aria-label="Delete API key"
-                  size="sm"
-                  colorPalette="red"
-                  onClick={() => handleDelete(key.id)}
-                >
-                  <FiTrash2 />
-                </IconButton>
+                {/* Super admin can insert keys; deletion disabled */}
               </Table.Cell>
             </Table.Row>
           ))}

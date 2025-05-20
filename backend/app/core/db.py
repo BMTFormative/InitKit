@@ -30,8 +30,13 @@ def init_db(session: Session) -> None:
             email=settings.FIRST_SUPERUSER,
             password=settings.FIRST_SUPERUSER_PASSWORD,
             is_superuser=True,
+            role="superadmin",
         )
         user = crud.create_user(session=session, user_create=user_in)
+        # Ensure role matches is_superuser flag
+        user.role = "superadmin"
+        session.add(user)
+        session.commit()
     
     # Create default subscription plans
     existing_plans = session.exec(select(SubscriptionPlan)).all()
