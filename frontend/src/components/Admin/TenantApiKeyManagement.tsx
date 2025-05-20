@@ -53,6 +53,10 @@ const TenantApiKeyManagement = () => {
   // Add type assertion and default to empty string if null/undefined
   const typedUser = user as UserWithTenant | null;
   const isSuperAdmin = !!typedUser?.is_superuser;
+  // Super-admins use the global API key management interface
+  if (isSuperAdmin) {
+    return <GlobalApiKeyManagement />;
+  }
   // For tenant admins, use their tenant; for super-admins, allow selecting a tenant
   const {
     data: tenants,
@@ -210,14 +214,16 @@ const TenantApiKeyManagement = () => {
                   : "Never used"}
               </Table.Cell>
               <Table.Cell>
-                <IconButton
-                  aria-label="Delete API key"
-                  size="sm"
-                  colorPalette="red"
-                  onClick={() => handleDelete(key.id)}
-                >
-                  <FiTrash2 />
-                </IconButton>
+                {!isSuperAdmin && (
+                  <IconButton
+                    aria-label="Delete API key"
+                    size="sm"
+                    colorPalette="red"
+                    onClick={() => handleDelete(key.id)}
+                  >
+                    <FiTrash2 />
+                  </IconButton>
+                )}
               </Table.Cell>
             </Table.Row>
           ))}
