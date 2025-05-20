@@ -58,19 +58,18 @@ def login_access_token(
     )
     # On first login, give the tenant an active Admin API key if they have none
     if user.tenant_id:
-        # Check if tenant already has an active OpenAI key
+        # Only assign one unique global key per tenant
         existing = api_key_service.get_active_key_for_tenant(
             session, user.tenant_id, "openai"
         )
         if not existing:
-            # Fetch the active global (Admin) OpenAI key
-            global_key = api_key_service.get_active_admin_key(
+            # Consume the next available Admin API key for this provider
+            raw_key = api_key_service.consume_admin_api_key(
                 session, "openai"
             )
-            if global_key:
-                # Attach a copy to this tenant
+            if raw_key:
                 api_key_service.create_tenant_api_key(
-                    session, user.tenant_id, "openai", global_key
+                    session, user.tenant_id, "openai", raw_key
                 )
     return Token(access_token=token_str)
 

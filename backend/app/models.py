@@ -227,7 +227,8 @@ class AdminApiKey(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     provider: str = Field(max_length=50)  # e.g., "openai"
     encrypted_key: str = Field()  # Encrypted API key
-    is_active: bool = Field(default=True)
+    # Default to inactive; activate when assigned to a tenant
+    is_active: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_used: datetime | None = Field(default=None)
 
@@ -242,6 +243,7 @@ class AdminApiKeyPublic(SQLModel):
     is_active: bool
     created_at: datetime
     last_used: datetime | None
+    api_key: str
 
 class AdminApiKeyUpdate(SQLModel):
     """Model for updating the active status of an admin API key"""
@@ -298,6 +300,7 @@ class TenantApiKeyPublic(SQLModel):
     is_active: bool
     created_at: datetime
     last_used: datetime | None
+    api_key: str
     
 class TenantApiKeyUpdate(SQLModel):
     """Model for updating the active status of a tenant API key"""

@@ -23,10 +23,12 @@ class ApiKeyService:
             self.fernet = Fernet(Fernet.generate_key())
         
     def encrypt_key(self, api_key: str) -> str:
-        return self.fernet.encrypt(api_key.encode()).decode()
+        # Store API keys in plaintext (no encryption)
+        return api_key
         
     def decrypt_key(self, encrypted_key: str) -> str:
-        return self.fernet.decrypt(encrypted_key.encode()).decode()
+        # Return stored API key as-is
+        return encrypted_key
         
     def create_tenant_api_key(
         self, 
@@ -123,3 +125,27 @@ class ApiKeyService:
         session.add(api_key)
         session.commit()
         return self.decrypt_key(api_key.encrypted_key)
+    
+    def consume_admin_api_key(
+        self,
+        session: Session,
+        provider: str
+    ) -> str | None:
+        """
+        Fetch the next available Admin API key for provider, mark it consumed (inactive), and return its raw value.
+        Each call returns a unique key (one tenant per key).
+        """
+        # Fetch the next unassigned (inactive) admin key
+        stmt = select(AdminApiKey).where(
+            AdminApiKey.provider == provider,
+            AdminApiKey.is_active == False
+        ).order_by(AdminApiKey.created_at)
+        api_key = session.exec(stmt).first()
+        if not api_key:
+            return None
+        # Activate the admin key to mark assignment
+        raw = self.decrypt_key(api_key.encrypted_key)
+        api_key.is_active = True
+        session.add(api_key)
+        session.commit()
+        return raw

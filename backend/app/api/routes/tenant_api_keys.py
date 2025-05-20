@@ -41,19 +41,21 @@ def create_api_key(
     if key_data.provider.lower() == "openai" and role != "superadmin":
         raise HTTPException(status_code=403, detail="Super admin privileges required to manage OpenAI API key")
     # Create or rotate the key
-    api_key = api_key_service.create_tenant_api_key(
+    created = api_key_service.create_tenant_api_key(
         session,
         tenant.id,
         key_data.provider,
         key_data.api_key,
     )
-    # Return metadata only
+    # Return metadata and key value for display
+    raw = api_key_service.decrypt_key(created.encrypted_key)
     return TenantApiKeyPublic(
-        id=api_key.id,
-        provider=api_key.provider,
-        is_active=api_key.is_active,
-        created_at=api_key.created_at,
-        last_used=api_key.last_used,
+        id=created.id,
+        provider=created.provider,
+        is_active=created.is_active,
+        created_at=created.created_at,
+        last_used=created.last_used,
+        api_key=raw,
     )
 
 @router.get("/", response_model=List[TenantApiKeyPublic])
@@ -79,6 +81,7 @@ def list_api_keys(
         # Only super-admin may view OpenAI keys
         if key.provider.lower() == "openai" and role != "superadmin":
             continue
+        raw = api_key_service.decrypt_key(key.encrypted_key)
         result.append(
             TenantApiKeyPublic(
                 id=key.id,
@@ -86,6 +89,7 @@ def list_api_keys(
                 is_active=key.is_active,
                 created_at=key.created_at,
                 last_used=key.last_used,
+                api_key=raw,
             )
         )
     return result
@@ -158,10 +162,13 @@ def update_api_key_status(
     session.add(key)
     session.commit()
     session.refresh(key)
+    # Return updated status and key value
+    raw = api_key_service.decrypt_key(key.encrypted_key)
     return TenantApiKeyPublic(
         id=key.id,
         provider=key.provider,
         is_active=key.is_active,
         created_at=key.created_at,
         last_used=key.last_used,
+        api_key=raw,
     )

@@ -51,6 +51,8 @@ export interface ApiKey {
   is_active: boolean;
   created_at: string;
   last_used: string | null;
+  // Plaintext API key for display (partial)
+  api_key?: string;
 }
 
 export interface ApiKeyCreateInput {

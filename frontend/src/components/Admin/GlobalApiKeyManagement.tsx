@@ -116,8 +116,9 @@ const GlobalApiKeyManagement = () => {
 
       <Table.Root>
         <Table.Header>
-          <Table.Row>
+        <Table.Row>
             <Table.ColumnHeader>Provider</Table.ColumnHeader>
+            <Table.ColumnHeader>Key</Table.ColumnHeader>
             <Table.ColumnHeader>Status</Table.ColumnHeader>
             <Table.ColumnHeader>Created</Table.ColumnHeader>
             <Table.ColumnHeader>Last Used</Table.ColumnHeader>
@@ -128,6 +129,12 @@ const GlobalApiKeyManagement = () => {
           {apiKeys?.map((key) => (
             <Table.Row key={key.id}>
               <Table.Cell>{key.provider}</Table.Cell>
+              <Table.Cell>
+                {key.api_key
+                  ? `${key.api_key.slice(0, 8)}...${key.api_key.slice(-4)}`
+                  : ""
+                }
+              </Table.Cell>
               <Table.Cell>
                 <Badge colorPalette={key.is_active ? "green" : "red"}>
                   {key.is_active ? "Active" : "Inactive"}
@@ -148,7 +155,7 @@ const GlobalApiKeyManagement = () => {
           ))}
           {apiKeys?.length === 0 && (
             <Table.Row>
-              <Table.Cell colSpan={5} textAlign="center">
+              <Table.Cell colSpan={6} textAlign="center">
                 No API keys found. Add a key to get started.
               </Table.Cell>
             </Table.Row>
@@ -189,7 +196,7 @@ const GlobalApiKeyManagement = () => {
                   />
                 </Field>
                 <Text fontSize="sm" color="gray.500">
-                  Your API key will be encrypted and stored securely. It will
+                  Your API key will be stored securely in plaintext. It will
                   only be used server-side to make API calls and will never be
                   exposed to clients.
                 </Text>
