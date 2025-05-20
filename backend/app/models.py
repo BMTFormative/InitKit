@@ -220,6 +220,32 @@ class TenantApiKey(SQLModel, table=True):
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_used: datetime | None = Field(default=None)
+    
+# Global API Key Management for super-admin (not tied to a tenant)
+class AdminApiKey(SQLModel, table=True):
+    """Global API keys managed by super-admin, not associated with any tenant."""
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    provider: str = Field(max_length=50)  # e.g., "openai"
+    encrypted_key: str = Field()  # Encrypted API key
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_used: datetime | None = Field(default=None)
+
+# Models for Admin API Key creation, response, and update
+class AdminApiKeyCreate(SQLModel):
+    provider: str = Field(max_length=50)
+    api_key: str
+
+class AdminApiKeyPublic(SQLModel):
+    id: uuid.UUID
+    provider: str
+    is_active: bool
+    created_at: datetime
+    last_used: datetime | None
+
+class AdminApiKeyUpdate(SQLModel):
+    """Model for updating the active status of an admin API key"""
+    is_active: bool
 
 # Credit System
 class CreditTransaction(SQLModel, table=True):
@@ -272,6 +298,10 @@ class TenantApiKeyPublic(SQLModel):
     is_active: bool
     created_at: datetime
     last_used: datetime | None
+    
+class TenantApiKeyUpdate(SQLModel):
+    """Model for updating the active status of a tenant API key"""
+    is_active: bool
 
 class CreditTransactionCreate(SQLModel):
     amount: float

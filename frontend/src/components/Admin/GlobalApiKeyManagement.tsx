@@ -1,5 +1,4 @@
-// frontend/src/components/Admin/TenantApiKeyManagement.tsx
-import { useState, useEffect } from "react";
+import { useState } from 'react';
 import {
   Button,
   Input,
@@ -12,14 +11,12 @@ import {
   Badge,
   NativeSelectRoot,
   NativeSelectField,
-} from "@chakra-ui/react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FiPlus, FiTrash2 } from "react-icons/fi";
-import { type SubmitHandler, useForm } from "react-hook-form";
-import useAuth from "@/hooks/useAuth";
-import useCustomToast from "@/hooks/useCustomToast";
-import GlobalApiKeyManagement from "./GlobalApiKeyManagement";
-import { handleError } from "@/utils";
+} from '@chakra-ui/react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { FiPlus, FiTrash2 } from 'react-icons/fi';
+import { type SubmitHandler, useForm } from 'react-hook-form';
+import useCustomToast from '@/hooks/useCustomToast';
+import { handleError } from '@/utils';
 import {
   DialogRoot,
   DialogContent,
@@ -29,49 +26,26 @@ import {
   DialogFooter,
   DialogActionTrigger,
   DialogCloseTrigger,
-} from "@/components/ui/dialog";
-import { Field } from "@/components/ui/field";
-import { SkeletonText } from "../ui/skeleton";
-import { ApiKeyService } from "@/services/api-key-service";
-import { TenantService } from "@/services/tenant-service";
-import { Tenant } from "@/types/tenant";
-import { ApiKey, ApiKeyCreateInput } from "@/types/tenant";
-import { UserPublic } from "@/client";
-import { UserWithTenant } from "@/types/tenant";
+} from '@/components/ui/dialog';
+import { Field } from '@/components/ui/field';
+import { SkeletonText } from '../ui/skeleton';
+import { GlobalApiKeyService } from '@/services/global-api-key-service';
+import { ApiKey, ApiKeyCreateInput } from '@/types/tenant';
 
 interface ApiKeyForm {
   provider: string;
   api_key: string;
 }
 
-const TenantApiKeyManagement = () => {
+const GlobalApiKeyManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const { showSuccessToast } = useCustomToast();
-  const { user } = useAuth();
 
-  // Add type assertion and default to empty string if null/undefined
-  const typedUser = user as UserWithTenant | null;
-  const isSuperAdmin = !!typedUser?.is_superuser;
-  // For tenant admins, use their tenant; for super-admins, allow selecting a tenant
-  const {
-    data: tenants,
-    isLoading: tenantsLoading,
-    error: tenantsError,
-  } = useQuery<Tenant[]>({
-    queryKey: ["tenants"],
-    queryFn: () => TenantService.listTenants(),
-    enabled: isSuperAdmin,
+  const { data: apiKeys, isLoading } = useQuery<ApiKey[]>({
+    queryKey: ['global-api-keys'],
+    queryFn: () => GlobalApiKeyService.listApiKeys(),
   });
-  const [selectedTenantId, setSelectedTenantId] = useState<string>(
-    typedUser?.tenant_id ?? ""
-  );
-  useEffect(() => {
-    if (isSuperAdmin && tenants && tenants.length > 0 && !selectedTenantId) {
-      setSelectedTenantId(tenants[0].id);
-    }
-  }, [isSuperAdmin, tenants, selectedTenantId]);
-  const tenantId = isSuperAdmin ? selectedTenantId : typedUser?.tenant_id ?? "";
 
   const {
     register,
@@ -80,25 +54,19 @@ const TenantApiKeyManagement = () => {
     formState: { errors, isSubmitting },
   } = useForm<ApiKeyForm>({
     defaultValues: {
-      provider: "openai",
-      api_key: "",
+      provider: 'openai',
+      api_key: '',
     },
-  });
-
-  const { data: apiKeys, isLoading } = useQuery({
-    queryKey: ["api-keys", tenantId],
-    queryFn: () => ApiKeyService.listApiKeys(tenantId),
-    enabled: !!tenantId,
   });
 
   const createMutation = useMutation({
     mutationFn: (data: ApiKeyCreateInput) =>
-      ApiKeyService.createApiKey({ tenantId, data }),
+      GlobalApiKeyService.createApiKey(data),
     onSuccess: () => {
-      showSuccessToast("API key added successfully");
+      showSuccessToast('API key added successfully');
       reset();
       setIsOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+      queryClient.invalidateQueries({ queryKey: ['global-api-keys'] });
     },
     onError: (err: any) => {
       handleError(err);
@@ -106,11 +74,10 @@ const TenantApiKeyManagement = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (keyId: string) =>
-      ApiKeyService.deleteApiKey({ tenantId, keyId }),
+    mutationFn: (keyId: string) => GlobalApiKeyService.deleteApiKey(keyId),
     onSuccess: () => {
-      showSuccessToast("API key deleted successfully");
-      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+      showSuccessToast('API key deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['global-api-keys'] });
     },
     onError: (err: any) => {
       handleError(err);
@@ -122,24 +89,10 @@ const TenantApiKeyManagement = () => {
   };
 
   const handleDelete = (keyId: string) => {
-    if (confirm("Are you sure you want to delete this API key?")) {
+    if (confirm('Are you sure you want to delete this API key?')) {
       deleteMutation.mutate(keyId);
     }
   };
-
-  // If super-admin has no tenants, render global API key management
-  if (isSuperAdmin && !tenantId && !tenantsLoading && tenants?.length === 0) {
-    return <GlobalApiKeyManagement />;
-  }
-  if (!tenantId) {
-    return (
-      <Heading size="md">
-        {isSuperAdmin
-          ? "No tenant selected."
-          : "No tenant associated with your account"}
-      </Heading>
-    );
-  }
 
   if (isLoading) {
     return <SkeletonText noOfLines={10} gap="4" />;
@@ -148,28 +101,7 @@ const TenantApiKeyManagement = () => {
   return (
     <VStack align="stretch" gap={6}>
       <Flex justify="space-between" align="center">
-        <Heading size="md">
-          API Key Management
-          {isSuperAdmin && selectedTenantId && tenants
-            ? ` for ${tenants.find((t) => t.id === selectedTenantId)?.name || ''}`
-            : ''}
-        </Heading>
-        {isSuperAdmin && (
-          <NativeSelectRoot>
-            <NativeSelectField
-              w="auto"
-              value={selectedTenantId}
-              onChange={(e) => setSelectedTenantId(e.target.value)}
-              mr={4}
-            >
-              {tenants?.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </NativeSelectField>
-          </NativeSelectRoot>
-        )}
+        <Heading size="md">Global API Key Management</Heading>
         <Button
           colorPalette="teal"
           onClick={() => {
@@ -193,7 +125,7 @@ const TenantApiKeyManagement = () => {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {apiKeys?.map((key: ApiKey) => (
+          {apiKeys?.map((key) => (
             <Table.Row key={key.id}>
               <Table.Cell>{key.provider}</Table.Cell>
               <Table.Cell>
@@ -293,4 +225,4 @@ const TenantApiKeyManagement = () => {
   );
 };
 
-export default TenantApiKeyManagement;
+export default GlobalApiKeyManagement;

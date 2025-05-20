@@ -1,8 +1,8 @@
 """initial_migration
 
-Revision ID: c66ddcf6379a
+Revision ID: d4a76dd79f7a
 Revises: 
-Create Date: 2025-05-18 15:21:51.435367
+Create Date: 2025-05-20 13:21:19.693351
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision = 'c66ddcf6379a'
+revision = 'd4a76dd79f7a'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -37,6 +37,21 @@ def upgrade():
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('emailconfig',
+    sa.Column('smtp_host', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('smtp_port', sa.Integer(), nullable=False),
+    sa.Column('smtp_user', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('smtp_password', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('smtp_use_tls', sa.Boolean(), nullable=False),
+    sa.Column('from_email', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('from_name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('tenant_id', sa.Uuid(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenant.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('tenantapikey',
@@ -120,6 +135,7 @@ def downgrade():
     op.drop_index(op.f('ix_user_email'), table_name='user')
     op.drop_table('user')
     op.drop_table('tenantapikey')
+    op.drop_table('emailconfig')
     op.drop_table('tenant')
     op.drop_table('subscriptionplan')
     # ### end Alembic commands ###
