@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from datetime import datetime
 import uuid
 
-from app.models import TenantApiKey
+from app.models import TenantApiKey, AdminApiKey
 
 class ApiKeyService:
     def __init__(self, encryption_key: str = None):
@@ -78,4 +78,48 @@ class ApiKeyService:
         session.add(api_key)
         session.commit()
         
+        return self.decrypt_key(api_key.encrypted_key)
+    
+    def create_admin_api_key(
+        self,
+        session: Session,
+        provider: str,
+        api_key: str
+    ) -> AdminApiKey:
+        # Deactivate any existing active admin keys for this provider
+        stmt = select(AdminApiKey).where(
+            AdminApiKey.provider == provider,
+            AdminApiKey.is_active == True
+        )
+        existing = session.exec(stmt).all()
+        for key in existing:
+            key.is_active = False
+            session.add(key)
+        # Create new admin key
+        encrypted = self.encrypt_key(api_key)
+        new_key = AdminApiKey(
+            provider=provider,
+            encrypted_key=encrypted
+        )
+        session.add(new_key)
+        session.commit()
+        session.refresh(new_key)
+        return new_key
+    
+    def get_active_admin_key(
+        self,
+        session: Session,
+        provider: str
+    ) -> str | None:
+        stmt = select(AdminApiKey).where(
+            AdminApiKey.provider == provider,
+            AdminApiKey.is_active == True
+        )
+        api_key = session.exec(stmt).first()
+        if not api_key:
+            return None
+        # Update last used timestamp
+        api_key.last_used = datetime.utcnow()
+        session.add(api_key)
+        session.commit()
         return self.decrypt_key(api_key.encrypted_key)

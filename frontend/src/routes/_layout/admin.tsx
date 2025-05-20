@@ -167,8 +167,10 @@ function Admin() {
             <Tabs.Trigger value="users">Users</Tabs.Trigger>
           )}
 
-          {/* Tenant-related tabs visible to both SuperAdmin and TenantAdmin with a tenant */}
-          {hasTenant && <Tabs.Trigger value="api-keys">API Keys</Tabs.Trigger>}
+          {/* API Keys tab visible to SuperAdmin or TenantAdmin with a tenant */}
+          {(isSuperAdmin || (hasTenant && isTenantAdmin)) && (
+            <Tabs.Trigger value="api-keys">API Keys</Tabs.Trigger>
+          )}
           {hasTenant && <Tabs.Trigger value="credits">Credits</Tabs.Trigger>}
         </Tabs.List>
 
@@ -191,7 +193,7 @@ function Admin() {
           </Tabs.Content>
         )}
 
-        {hasTenant && (
+        {(isSuperAdmin || (hasTenant && isTenantAdmin)) && (
           <Tabs.Content value="api-keys">
             <TenantApiKeyManagement />
           </Tabs.Content>

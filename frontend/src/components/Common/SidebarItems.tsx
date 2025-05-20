@@ -37,19 +37,15 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   const isTenantAdmin = currentUser?.role === "tenant_admin";
   const hasTenant = !!currentUser?.tenant_id;
 
-  // Show admin link to both superadmins and tenant admins
-  const showAdminLink = isSuperAdmin || isTenantAdmin;
-
-  const finalItems: Item[] = showAdminLink
-    ? [...items, { icon: FiUsers, title: "Admin", path: "/admin" }]
-    : items;
-// Add tenant user management for tenant admins
+  // Base menu items
+  const finalItems: Item[] = [...items];
+  // Admin dashboard for super-admin or tenant-admin with a tenant
+  if (isSuperAdmin || (isTenantAdmin && hasTenant)) {
+    finalItems.push({ icon: FiUsers, title: "Admin", path: "/admin" });
+  }
+  // Tenant Users menu for tenant admins
   if (isTenantAdmin && hasTenant) {
     finalItems.push({ icon: FiUsers, title: "Tenant Users", path: "/tenant-users" });
-  }
-  // Add admin dashboard for superadmins
-  if (isSuperAdmin) {
-    finalItems.push({ icon: FiUsers, title: "Admin", path: "/admin" });
   }
   const listItems = finalItems.map(({ icon, title, path }) => (
     <RouterLink key={title} to={path} onClick={onClose}>
