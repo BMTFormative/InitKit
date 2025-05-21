@@ -153,7 +153,7 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
     return HTMLResponse(
         content=email_data.html_content, headers={"subject:": email_data.subject}
     )
-@router.post("/accept-invitation", response_model=UserPublic)
+@router.post("/login/accept-invitation", response_model=UserPublic)
 def accept_invitation(
     session: SessionDep,
     token: str = Body(...),
@@ -164,8 +164,8 @@ def accept_invitation(
     """
     invitation_service = InvitationService()
     user = invitation_service.accept_invitation(
-        session,
-        token,
-        user_data
+        session=session,
+        token=token,
+        user_data=user_data
     )
     return user
