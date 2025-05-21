@@ -302,6 +302,16 @@ class TenantApiKeyPublic(SQLModel):
     last_used: datetime | None
     api_key: str
     
+class AdminTenantApiKeyPublic(SQLModel):
+    """Super-admin view of all tenant API keys, including tenant association."""
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    provider: str
+    is_active: bool
+    created_at: datetime
+    last_used: datetime | None
+    api_key: str
+    
 class TenantApiKeyUpdate(SQLModel):
     """Model for updating the active status of a tenant API key"""
     is_active: bool
