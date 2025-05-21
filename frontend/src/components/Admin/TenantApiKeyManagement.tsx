@@ -1,5 +1,5 @@
 // frontend/src/components/Admin/TenantApiKeyManagement.tsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Button,
   Input,
@@ -19,7 +19,7 @@ import { FiPlus, FiTrash2, FiSearch, FiFilter } from "react-icons/fi";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import useAuth from "@/hooks/useAuth";
 import useCustomToast from "@/hooks/useCustomToast";
-import GlobalApiKeyManagement from "./GlobalApiKeyManagement";
+// import GlobalApiKeyManagement from "./GlobalApiKeyManagement"; // no longer used
 import { handleError } from "@/utils";
 import {
   DialogRoot,
@@ -35,6 +35,9 @@ import { Field } from "@/components/ui/field";
 import { SkeletonText } from "../ui/skeleton";
 import { ApiKeyService } from "@/services/api-key-service";
 import { TenantService } from "@/services/tenant-service";
+// Service for super-admin view of all tenant API keys
+import { AdminTenantApiKeyService } from "@/services/admin-tenant-api-key-service";
+import { AdminTenantApiKey } from "@/types/tenant";
 import { Tenant } from "@/types/tenant";
 import { ApiKey, ApiKeyCreateInput } from "@/types/tenant";
 import { UserWithTenant } from "@/types/tenant";
@@ -77,17 +80,8 @@ const TenantApiKeyManagement = () => {
     enabled: isSuperAdmin,
   });
   
-  const [selectedTenantId, setSelectedTenantId] = useState<string>(
-    typedUser?.tenant_id ?? ""
-  );
-  
-  useEffect(() => {
-    if (isSuperAdmin && tenants && tenants.length > 0 && !selectedTenantId) {
-      setSelectedTenantId(tenants[0].id);
-    }
-  }, [isSuperAdmin, tenants, selectedTenantId]);
-  
-  const tenantId = isSuperAdmin ? selectedTenantId : typedUser?.tenant_id ?? "";
+  // Tenant ID for tenant-admins (super-admin sees all tenants)
+  const tenantId = typedUser?.tenant_id ?? "";
 
   const {
     register,
@@ -101,11 +95,21 @@ const TenantApiKeyManagement = () => {
     },
   });
 
-  const { data: apiKeys, isLoading } = useQuery({
+  // Fetch tenant-scoped keys for tenant-admins
+  const tenantQuery = useQuery<ApiKey[]>({
     queryKey: ["api-keys", tenantId],
     queryFn: () => ApiKeyService.listApiKeys(tenantId),
-    enabled: !!tenantId,
+    enabled: !isSuperAdmin && !!tenantId,
   });
+  // Fetch all tenant API keys for super-admin
+  const adminQuery = useQuery<AdminTenantApiKey[]>({
+    queryKey: ["tenant-api-keys", "all"],
+    queryFn: () => AdminTenantApiKeyService.listApiKeys(),
+    enabled: isSuperAdmin,
+  });
+  // Choose data source based on role
+  const apiKeys = isSuperAdmin ? adminQuery.data ?? [] : tenantQuery.data ?? [];
+  const isLoading = isSuperAdmin ? adminQuery.isLoading : tenantQuery.isLoading;
 
   const createMutation = useMutation({
     mutationFn: (data: ApiKeyCreateInput) =>
@@ -169,17 +173,11 @@ const TenantApiKeyManagement = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedKeys = filteredKeys.slice(startIndex, startIndex + pageSize);
 
-  // If super-admin has no tenants, render global API key management
-  if (isSuperAdmin && !tenantId && !tenantsLoading && tenants?.length === 0) {
-    return <GlobalApiKeyManagement />;
-  }
-  
-  if (!tenantId) {
+  // For tenant-admins, ensure they have an associated tenant
+  if (!isSuperAdmin && !tenantId) {
     return (
       <Heading size="md">
-        {isSuperAdmin
-          ? "No tenant selected."
-          : "No tenant associated with your account"}
+        No tenant associated with your account
       </Heading>
     );
   }
@@ -192,39 +190,24 @@ const TenantApiKeyManagement = () => {
     <VStack align="stretch" gap={6}>
       <Flex justify="space-between" align="center">
         <Heading size="md">
-          API Key Management
-          {isSuperAdmin && selectedTenantId && tenants
-            ? ` for ${tenants.find((t) => t.id === selectedTenantId)?.name || ''}`
-            : ''}
+          {isSuperAdmin
+            ? 'API Key Management (All Tenants)'
+            : 'API Key Management'}
         </Heading>
         
         <Flex gap={2}>
-          {isSuperAdmin && (
-            <NativeSelectRoot>
-              <NativeSelectField
-                w="auto"
-                value={selectedTenantId}
-                onChange={(e) => setSelectedTenantId(e.target.value)}
-              >
-                {tenants?.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </NativeSelectField>
-            </NativeSelectRoot>
+          {!isSuperAdmin && (
+            <Button
+              colorPalette="teal"
+              onClick={() => {
+                reset();
+                setIsOpen(true);
+              }}
+            >
+              <FiPlus />
+              Add API Key
+            </Button>
           )}
-          
-          <Button
-            colorPalette="teal"
-            onClick={() => {
-              reset();
-              setIsOpen(true);
-            }}
-          >
-            <FiPlus />
-            Add API Key
-          </Button>
         </Flex>
       </Flex>
 
@@ -284,6 +267,7 @@ const TenantApiKeyManagement = () => {
       <Table.Root>
         <Table.Header>
           <Table.Row>
+            {isSuperAdmin && <Table.ColumnHeader>Tenant</Table.ColumnHeader>}
             <Table.ColumnHeader>Provider</Table.ColumnHeader>
             <Table.ColumnHeader>Status</Table.ColumnHeader>
             <Table.ColumnHeader>Created</Table.ColumnHeader>
@@ -292,8 +276,13 @@ const TenantApiKeyManagement = () => {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {paginatedKeys.map((key: ApiKey) => (
+          {paginatedKeys.map((key: ApiKey | AdminTenantApiKey) => (
             <Table.Row key={key.id}>
+              {isSuperAdmin && (
+                <Table.Cell>
+                  {tenants?.find((t) => t.id === (key as AdminTenantApiKey).tenant_id)?.name || (key as AdminTenantApiKey).tenant_id}
+                </Table.Cell>
+              )}
               <Table.Cell>{key.provider}</Table.Cell>
               <Table.Cell>
                 <Badge colorPalette={key.is_active ? "green" : "red"}>

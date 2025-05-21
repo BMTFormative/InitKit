@@ -37,8 +37,13 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   const isTenantAdmin = currentUser?.role === "tenant_admin";
   const hasTenant = !!currentUser?.tenant_id;
 
-  // Base menu items
-  const finalItems: Item[] = [...items];
+  // Base menu items, show "Subscriptions" only for tenant admins
+  const finalItems: Item[] = items.filter(({ title }) => {
+    if (title === "Subscriptions") {
+      return isTenantAdmin && hasTenant;
+    }
+    return true;
+  });
   // Admin dashboard for super-admin or tenant-admin with a tenant
   if (isSuperAdmin || (isTenantAdmin && hasTenant)) {
     finalItems.push({ icon: FiUsers, title: "Admin", path: "/admin" });

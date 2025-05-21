@@ -54,6 +54,12 @@ export interface ApiKey {
   // Plaintext API key for display (partial)
   api_key?: string;
 }
+/**
+ * Tenant API key with tenant context for super-admin view
+ */
+export interface AdminTenantApiKey extends ApiKey {
+  tenant_id: string;
+}
 
 export interface ApiKeyCreateInput {
   provider: string;
