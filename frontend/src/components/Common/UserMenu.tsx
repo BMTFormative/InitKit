@@ -1,4 +1,4 @@
-import { Box, Button, Flex, Text } from "@chakra-ui/react"
+import { Box, Button, Flex, Text, Badge } from "@chakra-ui/react"
 import { Link } from "@tanstack/react-router"
 import { FaUserAstronaut } from "react-icons/fa"
 import { FiLogOut, FiUser } from "react-icons/fi"
@@ -7,7 +7,7 @@ import useAuth from "@/hooks/useAuth"
 import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "../ui/menu"
 
 const UserMenu = () => {
-  const { user, logout } = useAuth()
+  const { user, creditBalance, logout } = useAuth()
 
   const handleLogout = async () => {
     logout()
@@ -19,9 +19,15 @@ const UserMenu = () => {
       <Flex>
         <MenuRoot>
           <MenuTrigger asChild p={2}>
-            <Button data-testid="user-menu" variant="solid" maxW="sm" truncate>
+            <Button data-testid="user-menu" variant="solid" maxW="sm" truncate display="flex" alignItems="center" gap={2}>
               <FaUserAstronaut fontSize="18" />
               <Text>{user?.full_name || "User"}</Text>
+              {/* Display user's credit balance */}
+              {creditBalance !== undefined && (
+                <Badge colorScheme="teal" variant="solid">
+                  {creditBalance}
+                </Badge>
+              )}
             </Button>
           </MenuTrigger>
 

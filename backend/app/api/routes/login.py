@@ -13,6 +13,8 @@ from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models import Message, NewPassword, Token, UserPublic, UserCreate, User
 from app.services.api_key_service import ApiKeyService
+from app.services.credit_service import CreditService
+from app.models import SubscriptionPlan
 from sqlmodel import select
 from app.utils import (
     generate_password_reset_token,
@@ -168,4 +170,28 @@ def accept_invitation(
         token=token,
         user_data=user_data
     )
+    # Auto-subscribe invited user to a default active plan (cheapest)
+    try:
+        plans = crud.get_subscription_plans(session=session, skip=0, limit=1, active_only=True)
+        if plans:
+            plan = plans[0]
+            # Create subscription record for the new user
+            subscription = crud.create_user_subscription(
+                session=session,
+                user_id=user.id,
+                plan_id=plan.id,
+            )
+            # Allocate initial credits to user based on plan's credit_limit
+            credit_limit = getattr(plan, 'credit_limit', 0) or 0
+            if credit_limit > 0 and user.tenant_id:
+                CreditService().add_credits(
+                    session,
+                    user.tenant_id,
+                    credit_limit,
+                    f"Initial credit for plan '{plan.name}'",
+                    user.id,
+                )
+    except Exception:
+        # Ignore if auto-subscription fails
+        pass
     return user
