@@ -77,7 +77,9 @@ const getUrl = (config: OpenAPIConfig, options: ApiRequestOptions): string => {
 			return substring;
 		});
 
-	const url = config.BASE + path;
+	// Normalize duplicate segments (e.g., users/users) in generated paths
+	const normalizedPath = path.replace(/\/users\/users\//g, '/users/');
+	const url = config.BASE + normalizedPath;
 	return options.query ? url + getQueryString(options.query) : url;
 };
 

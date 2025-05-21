@@ -48,7 +48,7 @@ const useAuth = () => {
   const queryClient = useQueryClient();
   
   // Use the extended type here
-    const { data: user } = useQuery<UserWithTenant | null, Error>({
+  const { data: user } = useQuery<UserWithTenant | null, Error>({
     queryKey: ["currentUser"],
     queryFn: async () => {
       const userData = await UsersService.readUserMe();
@@ -70,6 +70,28 @@ const useAuth = () => {
       return userData;
     },
     enabled: isLoggedIn(),
+  });
+  
+  // Fetch current user's credit balance
+  const { data: creditBalance = 0 } = useQuery<number, Error>({
+    queryKey: ["creditBalance"],
+    queryFn: async () => {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/users/me/credit-balance`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to fetch credit balance");
+      }
+      const json = await res.json();
+      return json.balance;
+    },
+    enabled: Boolean(user),
   });
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegister) =>
@@ -134,6 +156,7 @@ const useAuth = () => {
     loginMutation,
     logout,
     user,
+    creditBalance,
     error,
     resetError: () => setError(null),
   };
