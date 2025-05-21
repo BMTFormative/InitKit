@@ -325,6 +325,9 @@ const onSubmit: SubmitHandler<UserRegisterForm> = async (data) => {
                               /{plan.duration_days} days
                             </Text>
                           </Text>
+                          <Text fontSize="md" color="gray.600">
+                            Credits per user: {plan.credit_limit}
+                          </Text>
                         </VStack>
                       </Card.Header>
 

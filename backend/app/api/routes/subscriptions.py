@@ -18,8 +18,10 @@ from app.models import (
     UserSubscriptionUpdate,
     UserSubscriptionPublic,
 )
+from app.services.credit_service import CreditService
 
 router = APIRouter()
+credit_service = CreditService()
 
 # Public endpoints for subscription plans
 @router.get("/plans", response_model=SubscriptionPlansPublic)
@@ -137,8 +139,21 @@ def subscribe_to_plan(
         user_id=current_user.id,
         plan_id=subscription_in.plan_id
     )
-    
     session.refresh(subscription)
+    # Allocate initial credit to user based on plan's credit limit
+    plan = session.get(SubscriptionPlan, subscription_in.plan_id)
+    try:
+        credit_limit = getattr(plan, 'credit_limit', 0) or 0
+    except Exception:
+        credit_limit = 0
+    if credit_limit > 0 and current_user.tenant_id:
+        credit_service.add_credits(
+            session,
+            current_user.tenant_id,
+            credit_limit,
+            f"Initial credit for plan '{plan.name}'",
+            current_user.id
+        )
     return subscription
 
 
