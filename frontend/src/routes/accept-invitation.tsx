@@ -71,8 +71,9 @@ function AcceptInvitation() {
       const parts = tokenParam.split(".");
       if (parts.length === 3) {
         const payload = JSON.parse(atob(parts[1]));
-        if (payload.email) {
-          setValue("email", payload.email);
+        const invitationEmail = payload.email ?? payload.eml;
+        if (invitationEmail) {
+          setValue("email", invitationEmail);
         }
       }
     } catch (e) {
@@ -89,7 +90,9 @@ function AcceptInvitation() {
       navigate({ to: "/login" });
     },
     onError: (err: any) => {
-      showErrorToast(err?.body?.detail || "Failed to accept invitation");
+      // Show API error detail if available
+      const message = err?.body?.detail || err?.detail || "Failed to accept invitation";
+      showErrorToast(message);
     },
   });
 

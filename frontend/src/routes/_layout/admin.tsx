@@ -168,7 +168,7 @@ function Admin() {
           )}
 
           {/* API Keys tab visible to SuperAdmin or TenantAdmin with a tenant */}
-          {(isSuperAdmin || (hasTenant && isTenantAdmin)) && (
+          {(isSuperAdmin ) && (
             <Tabs.Trigger value="api-keys">API Keys</Tabs.Trigger>
           )}
           {hasTenant && <Tabs.Trigger value="credits">Credits</Tabs.Trigger>}
