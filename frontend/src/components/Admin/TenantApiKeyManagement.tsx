@@ -12,9 +12,10 @@ import {
   Badge,
   NativeSelectRoot,
   NativeSelectField,
+  Box,
 } from "@chakra-ui/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiSearch, FiFilter } from "react-icons/fi";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import useAuth from "@/hooks/useAuth";
 import useCustomToast from "@/hooks/useCustomToast";
@@ -36,8 +37,14 @@ import { ApiKeyService } from "@/services/api-key-service";
 import { TenantService } from "@/services/tenant-service";
 import { Tenant } from "@/types/tenant";
 import { ApiKey, ApiKeyCreateInput } from "@/types/tenant";
-import { UserPublic } from "@/client";
 import { UserWithTenant } from "@/types/tenant";
+import {
+  PaginationItems,
+  PaginationNextTrigger,
+  PaginationPrevTrigger,
+  PaginationRoot,
+  PaginationPageText,
+} from "@/components/ui/pagination";
 
 interface ApiKeyForm {
   provider: string;
@@ -50,6 +57,13 @@ const TenantApiKeyManagement = () => {
   const { showSuccessToast } = useCustomToast();
   const { user } = useAuth();
 
+  // Filtering & Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [providerFilter, setProviderFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
   // Add type assertion and default to empty string if null/undefined
   const typedUser = user as UserWithTenant | null;
   const isSuperAdmin = !!typedUser?.is_superuser;
@@ -57,20 +71,22 @@ const TenantApiKeyManagement = () => {
   const {
     data: tenants,
     isLoading: tenantsLoading,
-    error: tenantsError,
   } = useQuery<Tenant[]>({
     queryKey: ["tenants"],
     queryFn: () => TenantService.listTenants(),
     enabled: isSuperAdmin,
   });
+  
   const [selectedTenantId, setSelectedTenantId] = useState<string>(
     typedUser?.tenant_id ?? ""
   );
+  
   useEffect(() => {
     if (isSuperAdmin && tenants && tenants.length > 0 && !selectedTenantId) {
       setSelectedTenantId(tenants[0].id);
     }
   }, [isSuperAdmin, tenants, selectedTenantId]);
+  
   const tenantId = isSuperAdmin ? selectedTenantId : typedUser?.tenant_id ?? "";
 
   const {
@@ -127,10 +143,37 @@ const TenantApiKeyManagement = () => {
     }
   };
 
+  // Filter and paginate API keys
+  const filteredKeys = (apiKeys || []).filter((key) => {
+    // Apply provider filter
+    if (providerFilter !== "all" && key.provider !== providerFilter) {
+      return false;
+    }
+    
+    // Apply status filter
+    if (statusFilter === "active" && !key.is_active) return false;
+    if (statusFilter === "inactive" && key.is_active) return false;
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return key.provider.toLowerCase().includes(query);
+    }
+    
+    return true;
+  });
+  
+  // Calculate pagination
+  const totalItems = filteredKeys.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedKeys = filteredKeys.slice(startIndex, startIndex + pageSize);
+
   // If super-admin has no tenants, render global API key management
   if (isSuperAdmin && !tenantId && !tenantsLoading && tenants?.length === 0) {
     return <GlobalApiKeyManagement />;
   }
+  
   if (!tenantId) {
     return (
       <Heading size="md">
@@ -154,32 +197,88 @@ const TenantApiKeyManagement = () => {
             ? ` for ${tenants.find((t) => t.id === selectedTenantId)?.name || ''}`
             : ''}
         </Heading>
-        {isSuperAdmin && (
-          <NativeSelectRoot>
-            <NativeSelectField
-              w="auto"
-              value={selectedTenantId}
-              onChange={(e) => setSelectedTenantId(e.target.value)}
-              mr={4}
-            >
-              {tenants?.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </NativeSelectField>
-          </NativeSelectRoot>
-        )}
-        <Button
-          colorPalette="teal"
-          onClick={() => {
-            reset();
-            setIsOpen(true);
-          }}
-        >
-          <FiPlus />
-          Add API Key
-        </Button>
+        
+        <Flex gap={2}>
+          {isSuperAdmin && (
+            <NativeSelectRoot>
+              <NativeSelectField
+                w="auto"
+                value={selectedTenantId}
+                onChange={(e) => setSelectedTenantId(e.target.value)}
+              >
+                {tenants?.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </NativeSelectField>
+            </NativeSelectRoot>
+          )}
+          
+          <Button
+            colorPalette="teal"
+            onClick={() => {
+              reset();
+              setIsOpen(true);
+            }}
+          >
+            <FiPlus />
+            Add API Key
+          </Button>
+        </Flex>
+      </Flex>
+
+      {/* Simple filter controls */}
+      <Flex gap={4} wrap={{ base: "wrap", md: "nowrap" }}>
+        <Box flex="1">
+          <Field label="Search">
+            <Input
+              placeholder="Search by provider"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </Field>
+        </Box>
+        
+        <Box minW="150px">
+          <Field label="Provider">
+            <NativeSelectRoot>
+              <NativeSelectField
+                value={providerFilter}
+                onChange={(e) => {
+                  setProviderFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="all">All Providers</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+                <option value="custom">Custom</option>
+              </NativeSelectField>
+            </NativeSelectRoot>
+          </Field>
+        </Box>
+        
+        <Box minW="150px">
+          <Field label="Status">
+            <NativeSelectRoot>
+              <NativeSelectField
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </NativeSelectField>
+            </NativeSelectRoot>
+          </Field>
+        </Box>
       </Flex>
 
       <Table.Root>
@@ -193,7 +292,7 @@ const TenantApiKeyManagement = () => {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {apiKeys?.map((key: ApiKey) => (
+          {paginatedKeys.map((key: ApiKey) => (
             <Table.Row key={key.id}>
               <Table.Cell>{key.provider}</Table.Cell>
               <Table.Cell>
@@ -218,20 +317,60 @@ const TenantApiKeyManagement = () => {
                     onClick={() => handleDelete(key.id)}
                   >
                     <FiTrash2 />
-                  </IconButton>
+                    </IconButton>
                 )}
               </Table.Cell>
             </Table.Row>
           ))}
-          {apiKeys?.length === 0 && (
+          {paginatedKeys.length === 0 && (
             <Table.Row>
               <Table.Cell colSpan={5} textAlign="center">
-                No API keys found. Add a key to get started.
+                {filteredKeys.length === 0 && apiKeys?.length === 0
+                  ? "No API keys found. Add a key to get started."
+                  : "No results match your filters."}
               </Table.Cell>
             </Table.Row>
           )}
         </Table.Body>
       </Table.Root>
+
+      {/* Pagination */}
+      {totalItems > 0 && (
+        <Flex justify="space-between" align="center">
+          <Flex align="center" gap={2}>
+            <Text>Show</Text>
+            <NativeSelectRoot width="70px">
+              <NativeSelectField
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </NativeSelectField>
+            </NativeSelectRoot>
+            <Text>entries</Text>
+          </Flex>
+          
+          <PaginationRoot
+            count={totalItems}
+            pageSize={pageSize}
+            page={currentPage}
+            onPageChange={({ page }) => setCurrentPage(page)}
+          >
+            <Flex gap={2} align="center">
+              <PaginationPageText />
+              <PaginationPrevTrigger />
+              <PaginationItems />
+              <PaginationNextTrigger />
+            </Flex>
+          </PaginationRoot>
+        </Flex>
+      )}
 
       <DialogRoot open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
         <DialogContent>
