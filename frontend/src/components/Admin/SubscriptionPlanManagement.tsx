@@ -39,6 +39,7 @@ interface PlanForm {
   duration_days: number;
   features: string;
   is_active: boolean;
+  credit_limit: number;
 }
 
 const SubscriptionPlanManagement = () => {
@@ -55,13 +56,14 @@ const SubscriptionPlanManagement = () => {
     control,
     formState: { errors, isSubmitting },
   } = useForm<PlanForm>({
-    defaultValues: {
+  defaultValues: {
       name: "",
       description: "",
       price: 0,
       duration_days: 30,
       features: "",
       is_active: true,
+      credit_limit: 0,
     },
   });
 
@@ -173,6 +175,7 @@ const SubscriptionPlanManagement = () => {
             <Table.ColumnHeader>Name</Table.ColumnHeader>
             <Table.ColumnHeader>Price</Table.ColumnHeader>
             <Table.ColumnHeader>Duration</Table.ColumnHeader>
+            <Table.ColumnHeader>Credits</Table.ColumnHeader>
             <Table.ColumnHeader>Status</Table.ColumnHeader>
             <Table.ColumnHeader>Actions</Table.ColumnHeader>
           </Table.Row>
@@ -183,6 +186,7 @@ const SubscriptionPlanManagement = () => {
               <Table.Cell>{plan.name}</Table.Cell>
               <Table.Cell>${plan.price}</Table.Cell>
               <Table.Cell>{plan.duration_days} days</Table.Cell>
+              <Table.Cell>{plan.credit_limit}</Table.Cell>
               <Table.Cell>
                 <Badge colorPalette={plan.is_active ? "green" : "red"}>
                   {plan.is_active ? "Active" : "Inactive"}
@@ -276,6 +280,20 @@ const SubscriptionPlanManagement = () => {
 
                 <Field label="Features (one per line)">
                   <Textarea {...register("features")} rows={4} />
+                </Field>
+                <Field
+                  label="Monthly Credit Limit (per user)"
+                  invalid={!!errors.credit_limit}
+                  errorText={errors.credit_limit?.message}
+                >
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...register("credit_limit", {
+                      min: { value: 0, message: "Credit must be non-negative" },
+                      valueAsNumber: true,
+                    })}
+                  />
                 </Field>
 
                 <Controller

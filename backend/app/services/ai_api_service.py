@@ -56,10 +56,10 @@ class AiApiProxyService:
         tokens = self._estimate_tokens(payload)
         cost = self._calculate_cost(model, tokens)
         
-        # Pre-deduct credits (we can refund if the request fails)
-        transaction = self.credit_service.deduct_credits(
-            session, 
-            tenant_id, 
+        # Pre-deduct credits from the user's balance (we can refund if the request fails)
+        transaction = self.credit_service.deduct_user_credits(
+            session,
+            tenant_id,
             cost,
             f"OpenAI API request: {model}",
             user_id

@@ -139,6 +139,8 @@ class SubscriptionPlanBase(SQLModel):
     price: float = Field(ge=0)
     duration_days: int = Field(gt=0)
     features: list[str] = Field(default=[], sa_column=Column(JSON))
+    # Monthly credit allocation per user
+    credit_limit: float = Field(default=0, description="Monthly credits allocated per user")
     is_active: bool = Field(default=True)
 
 
@@ -155,6 +157,7 @@ class SubscriptionPlanUpdate(SQLModel):
     duration_days: int | None = Field(default=None, gt=0)
     features: list[str] | None = Field(default=None, sa_column=Column(JSON))
     is_active: bool | None = None
+    credit_limit: float | None = Field(default=None, description="Monthly credits allocated per user")
 
 
 # Database model for subscription plans

@@ -78,3 +78,48 @@ class CreditService:
         session.commit()
         session.refresh(refund)
         return refund
+    
+    def get_user_balance(
+        self,
+        session: Session,
+        user_id: uuid.UUID
+    ) -> float:
+        """
+        Get the current credit balance for a specific user.
+        """
+        from sqlmodel import select, func
+        from app.models import CreditTransaction
+
+        statement = select(func.sum(CreditTransaction.amount)).where(
+            CreditTransaction.user_id == user_id
+        )
+        balance = session.exec(statement).one()
+        return balance or 0
+    
+    def deduct_user_credits(
+        self,
+        session: Session,
+        tenant_id: uuid.UUID,
+        amount: float,
+        description: str,
+        user_id: uuid.UUID
+    ) -> CreditTransaction:
+        """
+        Deduct credits from a specific user's balance, ensuring sufficient funds.
+        """
+        # Check if user has enough credits
+        balance = self.get_user_balance(session, user_id)
+        if balance < amount:
+            raise HTTPException(status_code=402, detail="Insufficient user credits")
+        # Record deduction tied to user and tenant
+        transaction = CreditTransaction(
+            tenant_id=tenant_id,
+            user_id=user_id,
+            amount=-amount,
+            description=description,
+            transaction_type="deduct"
+        )
+        session.add(transaction)
+        session.commit()
+        session.refresh(transaction)
+        return transaction
