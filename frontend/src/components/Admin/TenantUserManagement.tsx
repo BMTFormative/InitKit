@@ -10,14 +10,16 @@ import {
   Heading,
   Flex,
   Select,
+  Switch,
   createListCollection,
 } from "@chakra-ui/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FiPlus, FiTrash2 } from "react-icons/fi";
+// Removed global UsersService to use tenant-scoped API
+// import { UsersService } from "@/client";
 import useAuth from "@/hooks/useAuth";
 import { SkeletonText } from "../ui/skeleton";
 import InvitationForm from "./InvitationForm";
-import { UserActionsMenu } from "../Common/UserActionsMenu";
 import { TenantUserService } from "@/services/tenant-user-service";
 import { TenantUser, TenantInvitation } from "@/types/tenant";
 import useCustomToast from "@/hooks/useCustomToast";
@@ -72,10 +74,35 @@ const TenantUserManagement = () => {
     },
   });
 
+  // Mutation for updating user status using SDK
+  const updateUserStatusMutation = useMutation({
+    mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
+      TenantUserService.updateUser({ tenantId, userId, isActive }),
+    onSuccess: (_, variables) => {
+      showSuccessToast(
+        `User ${variables.isActive ? "enabled" : "disabled"} successfully`
+      );
+      queryClient.invalidateQueries({ queryKey: ["tenant-users"] });
+    },
+    onError: (err: any) => {
+      showErrorToast("Failed to update user status");
+      console.error(err);
+    },
+  });
+
   const handleDeleteInvitation = (invitationId: string) => {
     if (confirm("Are you sure you want to delete this invitation?")) {
       deleteInvitationMutation.mutate({ tenantId, invitationId });
     }
+  };
+
+  const handleToggleUserStatus = (userId: string, newStatus: boolean) => {
+    // Prevent disabling self
+    if (userId === typedUser?.id && !newStatus) {
+      showErrorToast("You cannot disable your own account");
+      return;
+    }
+    updateUserStatusMutation.mutate({ userId, isActive: newStatus });
   };
 
   if (!tenantId) {
@@ -93,7 +120,6 @@ const TenantUserManagement = () => {
       <Flex justify="space-between" align="center">
         <Heading size="md">User Management</Heading>
         <HStack>
-          {/* FIXED: Select component with proper collection implementation */}
           <Select.Root 
             collection={viewModeOptions}
             value={[viewMode]} 
@@ -149,10 +175,22 @@ const TenantUserManagement = () => {
                   </Badge>
                 </Table.Cell>
                 <Table.Cell>
-                  <UserActionsMenu
-                    user={user as any}
-                    disabled={typedUser?.id === user.id}
-                  />
+                  <Switch.Root
+                    checked={user.is_active}
+                    onCheckedChange={({ checked }) => handleToggleUserStatus(user.id, checked)}
+                    disabled={
+                      user.id === typedUser?.id ||
+                      updateUserStatusMutation.isPending
+                    }
+                    colorPalette="teal"
+                    size="sm"
+                  >
+                    {/* Hidden input for accessibility and event handling */}
+                    <Switch.HiddenInput />
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                  </Switch.Root>
                 </Table.Cell>
               </Table.Row>
             ))}

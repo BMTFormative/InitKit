@@ -12,6 +12,7 @@ from app.models import (
     TenantInvitation, TenantInvitationCreate, TenantInvitationPublic
 )
 from app.services.invitation_service import InvitationService
+from app import crud
 
 router = APIRouter(prefix="/tenants/{tenant_id}/users", tags=["tenant users"])
 invitation_service = InvitationService()
@@ -105,3 +106,23 @@ def delete_invitation(
     session.commit()
     
     return Message(message="Invitation deleted successfully")
+    
+@router.patch("/{user_id}", response_model=UserPublic)
+def update_tenant_user(
+    tenant: TenantFromPath,
+    user_id: uuid.UUID,
+    user_in: UserUpdate,
+    session: SessionDep,
+    admin_data: TenantAdminUser,
+) -> UserPublic:
+    """Update a user's status within a tenant (tenant admin only)"""
+    admin, _ = admin_data
+    # Ensure tenant admin belongs to this tenant
+    require_same_tenant((admin, admin.tenant_id, admin.role), tenant.id)
+    # Fetch user and ensure belongs to tenant
+    user = session.get(User, user_id)
+    if not user or user.tenant_id != tenant.id:
+        raise HTTPException(status_code=404, detail="User not found in this tenant")
+    # Only allow updating fields on UserUpdate (e.g., is_active)
+    updated_user = crud.update_user(session=session, db_user=user, user_in=user_in)
+    return updated_user
