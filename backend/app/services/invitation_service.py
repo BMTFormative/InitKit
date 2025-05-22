@@ -8,6 +8,9 @@ import logging
 import jwt
 
 from app.models import TenantInvitation, User, UserCreate, Tenant, EmailConfig
+from app import crud
+from app.services.credit_service import CreditService
+from app.models import SubscriptionPlan
 from app.core.security import create_access_token, get_password_hash
 from app.core.config import settings
 from app.utils import render_email_template
@@ -305,9 +308,42 @@ class InvitationService:
             session.commit()
             session.refresh(user)
             
+            # Auto-subscribe invited user to inviter's current plan
+            try:
+                # Determine inviter (who created the invitation)
+                inviter_id = invitation.created_by
+                # Get inviter's active subscription
+                inviter_sub = crud.get_user_subscription(session=session, user_id=inviter_id)
+                # Choose plan: inviter's plan or fallback to first active plan
+                if inviter_sub:
+                    plan_id = inviter_sub.plan_id
+                else:
+                    plans = crud.get_subscription_plans(session=session, skip=0, limit=1, active_only=True)
+                    plan_id = plans[0].id if plans else None
+                if plan_id:
+                    # Create subscription for the new user
+                    crud.create_user_subscription(
+                        session=session,
+                        user_id=user.id,
+                        plan_id=plan_id,
+                    )
+                    # Allocate initial credits to user based on plan's credit_limit
+                    plan = session.get(SubscriptionPlan, plan_id)
+                    credit_limit = getattr(plan, 'credit_limit', 0) or 0
+                    if credit_limit > 0 and user.tenant_id:
+                        CreditService().add_credits(
+                            session,
+                            user.tenant_id,
+                            credit_limit,
+                            f"Initial credit for plan '{plan.name}'",
+                            user.id,
+                        )
+            except Exception:
+                # Ignore auto-subscription errors
+                pass
+            
             # Send welcome email
             self._send_welcome_email(session, uuid.UUID(tenant_id), user)
-            
             return user
             
         except jwt.ExpiredSignatureError:

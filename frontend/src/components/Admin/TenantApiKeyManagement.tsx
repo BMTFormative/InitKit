@@ -19,7 +19,7 @@ import { FiPlus, FiTrash2, FiSearch, FiFilter } from "react-icons/fi";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import useAuth from "@/hooks/useAuth";
 import useCustomToast from "@/hooks/useCustomToast";
-// import GlobalApiKeyManagement from "./GlobalApiKeyManagement"; // no longer used
+import GlobalApiKeyManagement from "./GlobalApiKeyManagement"; // no longer used
 import { handleError } from "@/utils";
 import {
   DialogRoot,
@@ -173,8 +173,13 @@ const TenantApiKeyManagement = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedKeys = filteredKeys.slice(startIndex, startIndex + pageSize);
 
+  // Show global API key management for super-admins
+  if (isSuperAdmin) {
+    return <GlobalApiKeyManagement />;
+  }
+
   // For tenant-admins, ensure they have an associated tenant
-  if (!isSuperAdmin && !tenantId) {
+  if (!tenantId) {
     return (
       <Heading size="md">
         No tenant associated with your account
@@ -196,7 +201,7 @@ const TenantApiKeyManagement = () => {
         </Heading>
         
         <Flex gap={2}>
-          {!isSuperAdmin && (
+          {isSuperAdmin && (
             <Button
               colorPalette="teal"
               onClick={() => {
