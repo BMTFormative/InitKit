@@ -1,4 +1,4 @@
-﻿try:
+try:
     import sentry_sdk
 except ImportError:
     sentry_sdk = None
