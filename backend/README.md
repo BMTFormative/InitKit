@@ -170,3 +170,61 @@ The email templates are in `./backend/app/email-templates/`. Here, there are two
 Before continuing, ensure you have the [MJML extension](https://marketplace.visualstudio.com/items?itemName=attilabuti.vscode-mjml) installed in your VS Code.
 
 Once you have the MJML extension installed, you can create a new email template in the `src` directory. After creating the new email template and with the `.mjml` file open in your editor, open the command palette with `Ctrl+Shift+P` and search for `MJML: Export to HTML`. This will convert the `.mjml` file to a `.html` file and now you can save it in the build directory.
+
+## Deployment and Scaling
+
+### Docker Image
+
+Build the Docker image:
+```bash
+cd backend
+docker build -t my-backend-service .
+```
+
+### Run Container
+
+```bash
+docker run -d \
+  --name backend \
+  -e DATABASE_URL=postgresql://user:pass@host:port/dbname \
+  -e WORKERS=4 \
+  -p 8000:8000 \
+  my-backend-service
+```
+
+- `WORKERS` controls the number of FastAPI worker processes (default: 4). Increase to handle more load.
+
+### Docker Compose
+
+You can also use Docker Compose to deploy:
+```yaml
+version: '3.8'
+services:
+  backend:
+    image: my-backend-service
+    build: .
+    ports:
+      - '8000:8000'
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      WORKERS: ${WORKERS:-4}
+    deploy:
+      replicas: 3  # scale to 3 containers
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+```
+
+Use `docker stack deploy` or `docker compose up` to launch.
+
+### Adding New Modules
+
+To add a new module (e.g., for microservices or feature modules):
+1. Create a directory under `app/modules/<module_name>`.
+2. Add your routers, services, models, etc.
+3. Register the module’s router in `app/main.py`:
+   ```python
+   from app.modules import <module_name>
+   app.include_router(<module_name>.router, prefix='/<module_name>')
+   ```

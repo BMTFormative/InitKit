@@ -1,0 +1,63 @@
+# This YAML file defines the intended directory layout of the 'backend' folder.
+# Use it for reference or by scripts to validate or generate the structure.
+name: backend
+structure:
+  .dockerignore: file
+  .gitignore: file
+  Dockerfile: file
+  docker-compose.yml: file
+  pyproject.toml: file
+  poetry.lock: file
+  README.md: file
+  alembic:
+    type: directory
+    children:
+      env.py: file
+      versions:
+        type: directory
+  src:
+    type: directory
+    children:
+      backend:
+        type: directory
+        children:
+          __init__.py: file
+          main.py: file
+          core:
+            type: directory
+          db:
+            type: directory
+          models:
+            type: directory
+          crud:
+            type: directory
+          api:
+            type: directory
+          services:
+            type: directory
+          email_templates:
+            type: directory
+          shared:
+            type: directory
+          utils.py: file
+  tests:
+    type: directory
+    children:
+      unit:
+        type: directory
+      integration:
+        type: directory
+  scripts:
+    type: directory
+    children:
+      format.sh: file
+      lint.sh: file
+      prestart.sh: file
+      test.sh: file
+      tests-start.sh: file
+  tools:
+    type: directory
+    children:
+      migrate_backend.ps1: file
+      run_migration.bat: file
+      verify_structure.ps1: file
