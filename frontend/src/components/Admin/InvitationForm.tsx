@@ -8,7 +8,7 @@ import {
   DialogActionTrigger,
   DialogCloseTrigger,
 } from "@/components/ui/dialog";
-import { Button, Input, VStack, Select, Text, Alert } from "@chakra-ui/react";
+import { Button, Input, VStack, Select, Text } from "@chakra-ui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { Field } from "../ui/field";

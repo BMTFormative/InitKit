@@ -5,7 +5,6 @@ import {
   VStack,
   Table,
   Text,
-  IconButton,
   Flex,
   Heading,
   Badge,
@@ -13,7 +12,7 @@ import {
   NativeSelectField,
 } from '@chakra-ui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FiPlus, FiTrash2 } from 'react-icons/fi';
+import { FiPlus } from 'react-icons/fi';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 import useCustomToast from '@/hooks/useCustomToast';
 import { handleError } from '@/utils';
@@ -73,26 +72,13 @@ const GlobalApiKeyManagement = () => {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (keyId: string) => GlobalApiKeyService.deleteApiKey(keyId),
-    onSuccess: () => {
-      showSuccessToast('API key deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['global-api-keys'] });
-    },
-    onError: (err: any) => {
-      handleError(err);
-    },
-  });
+  
 
   const onSubmit: SubmitHandler<ApiKeyForm> = (data) => {
     createMutation.mutate(data);
   };
 
-  const handleDelete = (keyId: string) => {
-    if (confirm('Are you sure you want to delete this API key?')) {
-      deleteMutation.mutate(keyId);
-    }
-  };
+  
 
   if (isLoading) {
     return <SkeletonText noOfLines={10} gap="4" />;

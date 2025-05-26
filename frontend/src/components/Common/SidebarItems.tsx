@@ -9,8 +9,6 @@ import {
   FiDollarSign,
 } from "react-icons/fi";
 import type { IconType } from "react-icons/lib";
-
-import type { UserPublic } from "@/client";
 import { UserWithTenant } from "@/types/tenant";
 
 const items = [

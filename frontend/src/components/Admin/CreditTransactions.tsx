@@ -6,7 +6,6 @@ import {
   Flex,
   Button,
   Input,
-  Text,
 } from "@chakra-ui/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useAuth from "@/hooks/useAuth";
@@ -28,7 +27,6 @@ import {
 import { Field } from "@/components/ui/field";
 import { CreditService } from "@/services/credit-service";
 import { CreditTransaction, CreditAddInput } from "@/types/tenant";
-import { UserPublic } from "@/client";
 import { UserWithTenant } from "@/types/tenant";
 
 interface AddCreditsForm {

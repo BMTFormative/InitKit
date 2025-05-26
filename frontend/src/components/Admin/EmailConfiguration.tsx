@@ -20,6 +20,7 @@ import { UserWithTenant, EmailConfig } from "@/types/tenant";
 import { EmailConfigService } from "@/services/email-config-service";
 import { SkeletonText } from "../ui/skeleton";
 import { Checkbox } from "../ui/checkbox";
+import { LuExternalLink } from "react-icons/lu";
 
 const EmailConfiguration = () => {
   const queryClient = useQueryClient();
@@ -152,10 +153,9 @@ const EmailConfiguration = () => {
             helperText={
               <Link
                 href="https://support.google.com/mail/?p=BadCredentials"
-                isExternal
                 color="teal.500"
               >
-                Learn how to create an App Password
+                Learn how to create an App Password <LuExternalLink />
               </Link>
             }
             required

@@ -2,15 +2,11 @@
 import {
   Container,
   Heading,
-  Button,
   VStack,
-  HStack,
   Text,
   Alert,
 } from "@chakra-ui/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { FiPlus } from "react-icons/fi";
 import useAuth from "@/hooks/useAuth";
 import TenantUserManagement from "@/components/Admin/TenantUserManagement";
 import { UserWithTenant } from "@/types/tenant";
@@ -23,7 +19,6 @@ function TenantUsers() {
   const { user } = useAuth();
   const typedUser = user as UserWithTenant | null;
   const tenantId = typedUser?.tenant_id ?? '';
-  const isTenantAdmin = typedUser?.role === "tenant_admin";
   const isSuperAdmin = typedUser?.is_superuser;
 
   if (!tenantId && !isSuperAdmin) {

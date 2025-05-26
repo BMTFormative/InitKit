@@ -29,9 +29,8 @@ import { PasswordInput } from "@/components/ui/password-input";
 import useAuth, { isLoggedIn } from "@/hooks/useAuth";
 import { confirmPasswordRules, emailPattern, passwordRules } from "@/utils";
 import Logo from "/assets/images/Logo.svg";
-import { SubscriptionsService, type ApiError } from "@/client";
+import { SubscriptionsService } from "@/client";
 import useCustomToast from "@/hooks/useCustomToast";
-import { handleError } from "@/utils";
 import { SkeletonText } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/signup")({
@@ -140,7 +139,7 @@ const onSubmit: SubmitHandler<UserRegisterForm> = async (data) => {
 
   try {
     // First, sign up the user - this will create a tenant and user
-    const userResponse = await signUpMutation.mutateAsync(data);
+
     
     if (selectedPlanId) {
       // After signup, subscribe to the selected plan
