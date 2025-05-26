@@ -4,7 +4,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 
 import { UserPublic, UsersService } from "@/client";
-import AddUser from "@/components/Admin/AddUser";
 import { UserActionsMenu } from "@/components/Common/UserActionsMenu";
 import PendingUsers from "@/components/Pending/PendingUsers";
 import {
@@ -21,14 +20,7 @@ import SubscriptionPlanManagement from "@/components/Admin/SubscriptionPlanManag
 import { UserWithTenant } from "@/types/tenant";
 import EmailConfiguration from "@/components/Admin/EmailConfiguration";
 
-const tabsConfig = [
-  { value: "users", title: "Users", component: UsersTable },
-  {
-    value: "subscriptions",
-    title: "Subscription Plans",
-    component: SubscriptionPlanManagement,
-  },
-];
+
 
 const usersSearchSchema = z.object({
   page: z.number().catch(1),

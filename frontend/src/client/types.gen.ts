@@ -61,6 +61,7 @@ export type SubscriptionPlanCreate = {
 };
 
 export type SubscriptionPlanPublic = {
+    credit_limit: ReactNode;
     name: string;
     description?: (string | null);
     price: number;

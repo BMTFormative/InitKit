@@ -15,7 +15,7 @@ import {
   Box,
 } from "@chakra-ui/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FiPlus, FiTrash2, FiSearch, FiFilter } from "react-icons/fi";
+import { FiPlus, FiTrash2 } from "react-icons/fi";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import useAuth from "@/hooks/useAuth";
 import useCustomToast from "@/hooks/useCustomToast";
@@ -73,7 +73,6 @@ const TenantApiKeyManagement = () => {
   // For tenant admins, use their tenant; for super-admins, allow selecting a tenant
   const {
     data: tenants,
-    isLoading: tenantsLoading,
   } = useQuery<Tenant[]>({
     queryKey: ["tenants"],
     queryFn: () => TenantService.listTenants(),
@@ -169,7 +168,6 @@ const TenantApiKeyManagement = () => {
   
   // Calculate pagination
   const totalItems = filteredKeys.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedKeys = filteredKeys.slice(startIndex, startIndex + pageSize);
 
