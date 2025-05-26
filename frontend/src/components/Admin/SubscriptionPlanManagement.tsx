@@ -4,7 +4,6 @@ import {
   Input,
   VStack,
   Table,
-  Text,
   IconButton,
   Textarea,
   Badge,
