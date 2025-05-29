@@ -50,10 +50,10 @@ services:
     ports:
       - "5432:5432"
 
-  adminer:
-    restart: "no"
-    ports:
-      - "8080:8080"
+  # adminer:
+  #   restart: "no"
+  #   ports:
+  #     - "8080:8080"
 
   backend:
     restart: "no"
@@ -86,11 +86,11 @@ services:
       SMTP_TLS: "false"
       EMAILS_FROM_EMAIL: "noreply@example.com"
 
-  mailcatcher:
-    image: schickling/mailcatcher
-    ports:
-      - "1080:1080"
-      - "1025:1025"
+  # mailcatcher:
+  #   image: schickling/mailcatcher
+  #   ports:
+  #     - "1080:1080"
+  #     - "1025:1025"
 
   frontend:
     restart: "no"
