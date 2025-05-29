@@ -155,7 +155,7 @@ function Admin() {
             <Tabs.Trigger value="email">Email Settings</Tabs.Trigger>
           )}
           {/* Both SuperAdmin and TenantAdmin can see Users tab */}
-          {(hasTenant && isTenantAdmin) && (
+          {(isSuperAdmin || (hasTenant && isTenantAdmin)) && (
             <Tabs.Trigger value="users">Users</Tabs.Trigger>
           )}
 
@@ -181,7 +181,7 @@ function Admin() {
 
         {(isSuperAdmin || (hasTenant && isTenantAdmin)) && (
           <Tabs.Content value="users">
-            <TenantUserManagement />
+            {isSuperAdmin ? <UsersTable /> : <TenantUserManagement />}
           </Tabs.Content>
         )}
 
