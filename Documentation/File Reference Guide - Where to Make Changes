@@ -1,0 +1,216 @@
+# File Reference Guide - Where to Make Changes
+
+## 🎯 Quick Reference: Where to Update What
+
+### 📊 Database Models & Schema
+**When to update**: Adding new entities, changing table structure, new relationships
+```
+📁 backend/app/models.py                    # All SQLModel classes and relationships
+📁 backend/app/alembic/versions/            # Database migration files
+📁 backend/app/core/db.py                   # DB initialization, default data seeding
+```
+
+### 🔐 Authentication & Security
+**When to update**: Adding new roles, changing JWT structure, auth logic
+```
+📁 backend/app/core/security.py             # JWT creation, password hashing
+📁 backend/app/api/deps.py                  # Auth dependencies, role validation
+📁 backend/app/api/routes/login.py          # Login, password reset, invitation acceptance
+```
+
+### 🏢 Multi-Tenant Management
+**When to update**: Tenant features, organization management, isolation rules
+```
+📁 backend/app/api/routes/tenants.py        # Tenant CRUD operations
+📁 backend/app/api/routes/tenant_users.py   # User management within tenants
+📁 backend/app/api/routes/tenant_credits.py # Tenant credit management
+📁 backend/app/api/routes/tenant_api_keys.py # Tenant API key management
+📁 backend/app/api/routes/tenant_email_config.py # Tenant email settings
+```
+
+### 💳 Subscription & Billing System
+**When to update**: New plan features, billing logic, subscription management
+```
+📁 backend/app/api/routes/subscriptions.py  # Subscription plans and user subscriptions
+📁 backend/app/services/credit_service.py   # Credit operations and balance calculations
+📁 backend/app/crud.py                      # Subscription-related database operations
+```
+
+### 🔑 API Key Management
+**When to update**: New AI providers, key rotation logic, security improvements
+```
+📁 backend/app/services/api_key_service.py  # Key encryption, tenant assignment
+📁 backend/app/api/routes/admin_api_keys.py # SuperAdmin key management
+📁 backend/app/api/routes/admin_tenant_api_keys.py # Cross-tenant key viewing
+```
+
+### 🤖 AI API Proxy
+**When to update**: New AI providers, cost calculation, usage tracking
+```
+📁 backend/app/services/ai_api_service.py   # AI API proxy logic, cost calculation
+📁 backend/app/api/routes/ai_proxy.py       # AI API endpoints
+```
+
+### 👥 User Invitation System
+**When to update**: Invitation flow, email templates, user onboarding
+```
+📁 backend/app/services/invitation_service.py # Invitation creation and acceptance
+📁 backend/app/email-templates/src/invitation.mjml # Invitation email template
+📁 backend/app/email-templates/src/welcome.mjml # Welcome email template (if exists)
+```
+
+### 📧 Email System
+**When to update**: Email templates, SMTP configuration, email delivery
+```
+📁 backend/app/utils.py                     # Email generation and sending functions
+📁 backend/app/email-templates/src/         # MJML source templates
+📁 backend/app/email-templates/build/       # Compiled HTML templates
+📁 backend/app/api/routes/utils.py          # Email testing endpoints
+```
+
+### 👤 User Management
+**When to update**: User features, profile management, user operations
+```
+📁 backend/app/api/routes/users.py          # User CRUD, profile updates, credit balance
+📁 backend/app/crud.py                      # User database operations
+```
+
+### 🏗️ Application Core
+**When to update**: App configuration, startup logic, middleware
+```
+📁 backend/app/main.py                      # FastAPI app setup, CORS, middleware
+📁 backend/app/core/config.py               # Environment configuration
+📁 backend/app/api/main.py                  # API router registration
+```
+
+## 📋 Common Update Scenarios
+
+### Adding New Database Model
+1. **Add model class** → `backend/app/models.py`
+2. **Add relationships** → Update related models in `backend/app/models.py`
+3. **Create migration** → `alembic revision --autogenerate -m "description"`
+4. **Run migration** → `alembic upgrade head`
+5. **Add CRUD operations** → `backend/app/crud.py`
+
+### Adding New API Endpoint
+1. **Create route function** → Appropriate file in `backend/app/api/routes/`
+2. **Register router** → `backend/app/api/main.py`
+3. **Add dependencies** → Use existing deps from `backend/app/api/deps.py`
+4. **Update models** → Add request/response models in `backend/app/models.py`
+
+### Adding New AI Provider
+1. **Update API key service** → `backend/app/services/api_key_service.py`
+2. **Update AI proxy service** → `backend/app/services/ai_api_service.py`
+3. **Add cost calculation** → Update `_calculate_cost()` method
+4. **Add new endpoints** → `backend/app/api/routes/ai_proxy.py`
+
+### Adding New User Role
+1. **Update TokenPayload** → `backend/app/models.py`
+2. **Add role constants** → `backend/app/shared/constants/roles.py`
+3. **Update dependencies** → `backend/app/api/deps.py`
+4. **Update role checks** → Throughout API route files
+
+### Modifying Email Templates
+1. **Edit MJML source** → `backend/app/email-templates/src/*.mjml`
+2. **Compile to HTML** → Use MJML extension in VS Code
+3. **Save compiled version** → `backend/app/email-templates/build/*.html`
+4. **Update template logic** → `backend/app/utils.py`
+
+### Adding New Subscription Feature
+1. **Update SubscriptionPlan model** → `backend/app/models.py`
+2. **Create migration** → `alembic revision --autogenerate`
+3. **Update subscription service** → `backend/app/api/routes/subscriptions.py`
+4. **Update credit allocation** → `backend/app/services/credit_service.py`
+
+## 🔧 Configuration Files
+
+### Environment Configuration
+```
+📁 .env                                     # Environment variables
+📁 backend/app/core/config.py               # Settings class and validation
+```
+
+### Database Configuration
+```
+📁 backend/app/core/db.py                   # Database engine and initialization
+📁 backend/app/alembic/env.py               # Alembic migration configuration
+📁 backend/app/alembic/alembic.ini          # Alembic settings
+```
+
+### Dependencies & Build
+```
+📁 backend/pyproject.toml                   # Python dependencies and project config
+📁 backend/Dockerfile                       # Docker container configuration
+📁 backend/docker-compose.yml               # Local development setup
+```
+
+## 🧪 Testing Files
+
+### Test Organization
+```
+📁 backend/app/tests/conftest.py            # Test configuration and fixtures
+📁 backend/app/tests/api/routes/            # API endpoint tests
+📁 backend/app/tests/crud/                  # Database operation tests
+📁 backend/app/tests/utils/                 # Test utilities and helpers
+```
+
+### Test Utilities
+```
+📁 backend/app/tests/utils/user.py          # User creation and auth helpers
+📁 backend/app/tests/utils/item.py          # Item creation helpers
+📁 backend/app/tests/utils/utils.py         # General test utilities
+```
+
+## 🚀 Deployment & Scripts
+
+### Deployment Scripts
+```
+📁 backend/scripts/prestart.sh              # Pre-deployment setup
+📁 backend/scripts/test.sh                  # Run test suite
+📁 backend/scripts/format.sh                # Code formatting
+📁 backend/scripts/lint.sh                  # Code linting
+```
+
+### Migration Scripts
+```
+📁 backend/app/backend_pre_start.py         # Database connection check
+📁 backend/app/initial_data.py              # Initial data seeding
+📁 backend/app/tests_pre_start.py           # Test database setup
+```
+
+## 🎨 Module Structure (Future Organization)
+
+### Planned Module Organization
+```
+📁 backend/app/modules/                     # Future modular structure
+├── auth/                                   # Authentication module
+├── tenants/                                # Tenant management module
+├── subscriptions/                          # Billing and subscriptions
+├── api_keys/                               # API key management
+├── credits/                                # Credit system
+├── invitations/                            # User invitation system
+├── email/                                  # Email configuration
+├── ai_proxy/                               # AI API proxy
+└── items/                                  # Business entities
+```
+
+## 💡 Quick Tips for Updates
+
+### Before Making Changes
+1. **Check current models** → `backend/app/models.py`
+2. **Review existing tests** → `backend/app/tests/`
+3. **Check dependencies** → `backend/app/api/deps.py`
+4. **Review business logic** → Relevant service files
+
+### After Making Changes
+1. **Run tests** → `bash backend/scripts/test.sh`
+2. **Check linting** → `bash backend/scripts/lint.sh`
+3. **Update migrations** → `alembic revision --autogenerate`
+4. **Update documentation** → This file and API docs
+
+### Common Gotchas
+- **Always update both model and migration** when changing schema
+- **Check role-based access** for new endpoints
+- **Update tests** when adding new functionality
+- **Compile MJML templates** after editing email templates
+- **Check tenant isolation** for new multi-tenant features

@@ -1,0 +1,154 @@
+# Multi-Tenant SaaS Platform - Application Overview
+
+## What This Application Is
+
+This is a **FastAPI-based multi-tenant SaaS platform** with subscription management, credit system, and AI API proxy capabilities. It enables multiple organizations (tenants) to have isolated workspaces with their own users, subscriptions, and API usage tracking.
+
+## Core Business Model
+
+### Multi-Tenancy Structure
+- **Tenants**: Organizations/companies that subscribe to the platform
+- **Users**: Belong to specific tenants with role-based access
+- **Isolation**: Data is isolated per tenant using `tenant_id` in shared schema
+
+### Role Hierarchy
+1. **SuperAdmin**: Platform-wide management (global access)
+2. **TenantAdmin**: Manages their organization and users
+3. **User**: Regular tenant members with limited access
+
+### Subscription & Credit System
+- **Subscription Plans**: Define features, pricing, and credit limits
+- **Credits**: Consumed when users make API calls (pay-per-use)
+- **Billing**: Credit-based consumption model
+
+## Key Features
+
+### 1. Tenant Management
+- Organizations can sign up and get their own workspace
+- Tenant admins can invite and manage users
+- Each tenant has isolated data and settings
+
+### 2. Subscription System
+- Multiple subscription plans with different features
+- Automatic credit allocation based on plan
+- Subscription lifecycle management
+
+### 3. Credit System
+- Users consume credits for API usage
+- Real-time balance tracking
+- Transaction history and refunds
+
+### 4. Secure API Key Management
+- Encrypted storage of API keys (OpenAI, etc.)
+- Per-tenant API key assignment
+- SuperAdmin manages global key pool
+- Tenants never see actual keys (only active/inactive status)
+
+### 5. AI API Proxy
+- Secure proxy for OpenAI API calls
+- Automatic credit deduction
+- Cost calculation per model/usage
+- Request/response logging
+
+### 6. Invitation System
+- JWT-based invitation tokens
+- Email-based user onboarding
+- Secure user registration flow
+
+### 7. Email System
+- Per-tenant SMTP configuration
+- MJML email templates
+- Invitation and welcome emails
+
+## Technical Architecture
+
+### Backend Stack
+- **FastAPI**: Web framework
+- **SQLModel**: ORM and data validation
+- **PostgreSQL**: Primary database
+- **Alembic**: Database migrations
+- **JWT**: Authentication tokens
+- **Cryptography**: API key encryption
+
+### Database Design
+- Shared schema with tenant isolation
+- Foreign key relationships for data integrity
+- Audit trails for credit transactions
+
+### Security Features
+- Role-based access control (RBAC)
+- JWT tokens with tenant and role claims
+- API key encryption
+- Request validation and sanitization
+
+## File Structure Importance
+
+### Core Application Files
+- `app/models.py`: All database models and relationships
+- `app/crud.py`: Database operations
+- `app/api/routes/`: REST API endpoints
+- `app/services/`: Business logic services
+- `app/core/`: Configuration and security
+- `app/utils.py`: Utility functions (email, tokens)
+
+### Key Service Files
+- `app/services/api_key_service.py`: API key encryption/management
+- `app/services/credit_service.py`: Credit operations
+- `app/services/invitation_service.py`: User invitation flow
+- `app/services/ai_api_service.py`: AI API proxy logic
+
+### Configuration & Setup
+- `app/core/config.py`: Application settings
+- `app/core/db.py`: Database initialization
+- `app/core/security.py`: JWT and password handling
+- `app/alembic/`: Database migrations
+
+## Business Flows
+
+### User Onboarding
+1. Tenant admin creates invitation
+2. Invitation email sent with JWT token
+3. User clicks link and registers
+4. User gets assigned to tenant with role
+5. Credits allocated based on subscription plan
+
+### API Usage Flow
+1. User makes API request through platform
+2. System validates user permissions
+3. Credit balance checked
+4. Request proxied to external API (OpenAI)
+5. Credits deducted based on usage
+6. Response returned to user
+
+### Subscription Management
+1. SuperAdmin creates subscription plans
+2. Tenants subscribe to plans
+3. Credits allocated per plan limits
+4. Usage tracked and billed accordingly
+
+## Integration Points
+
+### External Services
+- **OpenAI API**: For AI capabilities
+- **SMTP Servers**: For email delivery
+- **Payment Systems**: (Future integration)
+
+### Frontend Integration
+- JWT-based authentication
+- Role-based UI components
+- Real-time credit balance updates
+- Tenant-specific dashboards
+
+## Scalability Considerations
+
+### Current Architecture Supports
+- Multi-tenant data isolation
+- Horizontal scaling via stateless design
+- Credit-based billing model
+- Modular service architecture
+
+### Future Enhancements Ready
+- Additional AI providers
+- Custom billing cycles
+- Advanced analytics
+- White-label customization
