@@ -1,3 +1,48 @@
+this my first prompts "
+my first prompts is this "I am building a multi-tenant SaaS platform using inotKit folder. I’ve already implemented a subscription module. Now I want to evolve it into a multi-tenant subscription system with credits.and any update or add tell me the path
+🔹 My Feature Requirements:
+Each enterprise tenant should have:
+1. An Admin account that can:
+   * Create and manage users under their enterprise.
+   * Allocate credit to users (deducted as they use services).
+2. A Secure AI API Key (e.g., OpenAI key):
+   * Provided by the platform.
+   * Visible to tenant admin only as “Active” or “Inactive”, never the actual key.
+   * Used internally via server-side proxy.
+3. A SuperAdmin account that can:
+   * Manage subscription plans, tenant accounts, and credit limits.
+   * Add/rotate OpenAI API keys securely.
+🧱 I need help with designing the best-practice architecture for:
+✅ Multi-Tenant Structure
+* What is the best approach to data isolation (e.g., shared schema with tenant_id column)?
+* How to implement role-based access control (SuperAdmin, TenantAdmin, User) in FastAPI?
+* How to structure JWTs with tenant_id and role claims?
+✅ Admin-based User Creation
+* What is the most secure and scalable way for a TenantAdmin to invite users?
+* Should I use invitation links with one-time JWT tokens?
+* How do I handle the registration flow securely?
+✅ Secure API Key Delivery per Tenant
+* Should API keys be encrypted in the database and stored per tenant?
+* How can the FastAPI backend proxy OpenAI calls securely?
+* How should SuperAdmin rotate keys?
+* Is it better to let tenants optionally add their own OpenAI API key instead?
+🔐 Implementation Goals:
+* Isolate data securely per tenant
+* Use credit-based billing per usage (deduct credit on API calls)
+* Never expose API keys to the frontend or tenants
+* Allow optional tenant-provided keys
+* Enable SuperAdmin to manage tenants, credit, and keys
+* Protect and validate all user and tenant actions through FastAPI services and middleware
+📌 Please help me design:
+* The overall architecture pattern (models, services, API flow)
+* Secure invitation-based user registration
+* Encrypted API key management and delivery best practices
+* A clean way to handle credit deduction per API usage
+* Role-based access enforcement in FastAPI
+"
+My Requirements:
+1- Use chakra ui v3 in code 
+2- look the first prompts just for knowledge 
 # Project Setup and Development Guide
 
 ## 📚 How to Use This Documentation
