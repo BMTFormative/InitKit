@@ -1,216 +1,292 @@
-# File Reference Guide - Where to Make Changes
+# Complete File Reference Guide - Frontend & Backend
 
-## 🎯 Quick Reference: Where to Update What
+## 🎯 Quick Reference Structure
 
-### 📊 Database Models & Schema
-**When to update**: Adding new entities, changing table structure, new relationships
+### 📁 Project Structure Overview
 ```
-📁 backend/app/models.py                    # All SQLModel classes and relationships
-📁 backend/app/alembic/versions/            # Database migration files
-📁 backend/app/core/db.py                   # DB initialization, default data seeding
+project/
+├── backend/                     # FastAPI Backend
+│   ├── app/                     # Main application
+│   ├── scripts/                 # Deployment scripts
+│   └── tests/                   # Test suite
+├── frontend/                    # React Frontend
+│   ├── src/                     # Source code
+│   └── public/                  # Static assets
+└── Documentation/               # Project docs
+```
+
+## 🖥️ BACKEND FILE ORGANIZATION
+
+### 📊 Core Application Files
+```
+backend/app/
+├── models.py                    # All database models and relationships
+├── crud.py                      # Database operations
+├── main.py                      # FastAPI app setup and configuration
+├── utils.py                     # Utility functions (email, tokens)
+├── api/                         # API routes organization
+├── core/                        # Core configuration
+├── services/                    # Business logic services
+└── alembic/                     # Database migrations
 ```
 
 ### 🔐 Authentication & Security
-**When to update**: Adding new roles, changing JWT structure, auth logic
 ```
-📁 backend/app/core/security.py             # JWT creation, password hashing
-📁 backend/app/api/deps.py                  # Auth dependencies, role validation
-📁 backend/app/api/routes/login.py          # Login, password reset, invitation acceptance
+backend/app/core/
+├── security.py                  # JWT creation, password hashing
+├── config.py                    # Environment configuration
+└── db.py                        # Database initialization
+
+backend/app/api/
+└── deps.py                      # Auth dependencies, role validation
 ```
 
-### 🏢 Multi-Tenant Management
-**When to update**: Tenant features, organization management, isolation rules
+### 🌐 API Routes Organization
 ```
-📁 backend/app/api/routes/tenants.py        # Tenant CRUD operations
-📁 backend/app/api/routes/tenant_users.py   # User management within tenants
-📁 backend/app/api/routes/tenant_credits.py # Tenant credit management
-📁 backend/app/api/routes/tenant_api_keys.py # Tenant API key management
-📁 backend/app/api/routes/tenant_email_config.py # Tenant email settings
-```
-
-### 💳 Subscription & Billing System
-**When to update**: New plan features, billing logic, subscription management
-```
-📁 backend/app/api/routes/subscriptions.py  # Subscription plans and user subscriptions
-📁 backend/app/services/credit_service.py   # Credit operations and balance calculations
-📁 backend/app/crud.py                      # Subscription-related database operations
-```
-
-### 🔑 API Key Management
-**When to update**: New AI providers, key rotation logic, security improvements
-```
-📁 backend/app/services/api_key_service.py  # Key encryption, tenant assignment
-📁 backend/app/api/routes/admin_api_keys.py # SuperAdmin key management
-📁 backend/app/api/routes/admin_tenant_api_keys.py # Cross-tenant key viewing
+backend/app/api/routes/
+├── login.py                     # Authentication endpoints
+├── users.py                     # User management
+├── tenants.py                   # Tenant CRUD operations
+├── tenant_users.py              # Tenant user management
+├── tenant_api_keys.py           # Tenant API key management
+├── tenant_credits.py            # Credit management
+├── tenant_email_config.py       # Email configuration
+├── subscriptions.py             # Subscription management
+├── admin_api_keys.py            # Global API key management
+├── ai_proxy.py                  # AI API proxy
+├── items.py                     # Business entities
+└── utils.py                     # Utility endpoints
 ```
 
-### 🤖 AI API Proxy
-**When to update**: New AI providers, cost calculation, usage tracking
+### 🔧 Business Logic Services
 ```
-📁 backend/app/services/ai_api_service.py   # AI API proxy logic, cost calculation
-📁 backend/app/api/routes/ai_proxy.py       # AI API endpoints
-```
-
-### 👥 User Invitation System
-**When to update**: Invitation flow, email templates, user onboarding
-```
-📁 backend/app/services/invitation_service.py # Invitation creation and acceptance
-📁 backend/app/email-templates/src/invitation.mjml # Invitation email template
-📁 backend/app/email-templates/src/welcome.mjml # Welcome email template (if exists)
+backend/app/services/
+├── api_key_service.py           # API key encryption/management
+├── credit_service.py            # Credit operations
+├── invitation_service.py        # User invitation flow
+└── ai_api_service.py            # AI API proxy logic
 ```
 
 ### 📧 Email System
-**When to update**: Email templates, SMTP configuration, email delivery
 ```
-📁 backend/app/utils.py                     # Email generation and sending functions
-📁 backend/app/email-templates/src/         # MJML source templates
-📁 backend/app/email-templates/build/       # Compiled HTML templates
-📁 backend/app/api/routes/utils.py          # Email testing endpoints
-```
-
-### 👤 User Management
-**When to update**: User features, profile management, user operations
-```
-📁 backend/app/api/routes/users.py          # User CRUD, profile updates, credit balance
-📁 backend/app/crud.py                      # User database operations
+backend/app/email-templates/
+├── src/                         # MJML source templates
+│   └── invitation.mjml          # Invitation email template
+└── build/                       # Compiled HTML templates
+    └── invitation.html          # Generated HTML
 ```
 
-### 🏗️ Application Core
-**When to update**: App configuration, startup logic, middleware
+### 🧪 Testing Structure
 ```
-📁 backend/app/main.py                      # FastAPI app setup, CORS, middleware
-📁 backend/app/core/config.py               # Environment configuration
-📁 backend/app/api/main.py                  # API router registration
+backend/app/tests/
+├── conftest.py                  # Test configuration
+├── api/routes/                  # API endpoint tests
+├── crud/                        # Database operation tests
+└── utils/                       # Test utilities
+```
+
+## 🎨 FRONTEND FILE ORGANIZATION
+
+### 📱 Core Application Structure
+```
+frontend/src/
+├── main.tsx                     # App entry point
+├── routeTree.gen.ts            # Generated routes
+├── theme.tsx                   # Chakra UI theme
+├── utils.ts                    # Utility functions
+├── hooks/                      # Custom React hooks
+├── types/                      # TypeScript type definitions
+├── services/                   # API service calls
+├── components/                 # Reusable components
+└── routes/                     # Page components
+```
+
+### 🔐 Authentication & Hooks
+```
+frontend/src/hooks/
+├── useAuth.ts                  # Authentication hook with tenant support
+└── useCustomToast.ts          # Toast notification hook
+```
+
+### 🌐 API Services
+```
+frontend/src/services/
+├── tenant-service.ts           # Tenant management API calls
+├── tenant-user-service.ts      # Tenant user management
+├── api-key-service.ts          # API key management
+├── credit-service.ts           # Credit transactions
+├── invitation-service.ts       # User invitation API
+├── email-config-service.ts     # Email configuration
+├── global-api-key-service.ts   # Global API key management
+└── admin-tenant-api-key-service.ts # Cross-tenant API key view
+```
+
+### 🧩 Component Organization
+```
+frontend/src/components/
+├── ui/                         # Chakra UI wrapper components
+│   ├── button.tsx             # Custom button component
+│   ├── dialog.tsx             # Modal dialogs
+│   ├── field.tsx              # Form field wrapper
+│   ├── checkbox.tsx           # Checkbox component
+│   ├── pagination.tsx         # Pagination component
+│   └── ...                    # Other UI components
+├── Common/                     # Shared components
+│   ├── Navbar.tsx             # Top navigation
+│   ├── Sidebar.tsx            # Side navigation
+│   ├── SidebarItems.tsx       # Navigation items
+│   ├── UserMenu.tsx           # User dropdown menu
+│   ├── NotFound.tsx           # 404 page
+│   └── GlobalInvitationModal.tsx # Global invitation modal
+├── Admin/                      # Admin-specific components
+│   ├── AddUser.tsx            # User creation form
+│   ├── EditUser.tsx           # User editing form
+│   ├── DeleteUser.tsx         # User deletion confirmation
+│   ├── TenantsManagement.tsx   # Tenant management dashboard
+│   ├── TenantUserManagement.tsx # Tenant user management
+│   ├── TenantApiKeyManagement.tsx # API key management
+│   ├── GlobalApiKeyManagement.tsx # Global API keys
+│   ├── CreditTransactions.tsx  # Credit management
+│   ├── SubscriptionPlanManagement.tsx # Plan management
+│   ├── EmailConfiguration.tsx  # Email settings
+│   └── InvitationForm.tsx     # User invitation form
+├── Items/                      # Business entity components
+│   ├── AddItem.tsx            # Item creation
+│   ├── EditItem.tsx           # Item editing
+│   └── DeleteItem.tsx         # Item deletion
+├── UserSettings/               # User settings components
+│   ├── UserInformation.tsx     # Profile management
+│   ├── ChangePassword.tsx      # Password change
+│   ├── Appearance.tsx          # Theme settings
+│   ├── DeleteAccount.tsx       # Account deletion
+│   └── DeleteConfirmation.tsx  # Deletion confirmation
+├── Subscriptions/              # Subscription components
+│   ├── SubscriptionPlans.tsx   # Available plans
+│   └── CurrentSubscription.tsx # Current subscription status
+└── Pending/                    # Loading state components
+    ├── PendingItems.tsx       # Loading items
+    └── PendingUsers.tsx       # Loading users
+```
+
+### 🛣️ Route Organization
+```
+frontend/src/routes/
+├── __root.tsx                  # Root layout
+├── _layout.tsx                 # Authenticated layout
+├── login.tsx                   # Login page
+├── signup.tsx                  # Registration page
+├── recover-password.tsx        # Password recovery
+├── reset-password.tsx          # Password reset
+├── accept-invitation.tsx       # Invitation acceptance
+└── _layout/                    # Protected routes
+    ├── index.tsx              # Dashboard
+    ├── admin.tsx              # Admin dashboard
+    ├── items.tsx              # Items management
+    ├── settings.tsx           # User settings
+    ├── subscriptions.tsx      # Subscription management
+    └── tenant-users.tsx       # Tenant user management
+```
+
+### 🎨 Type Definitions
+```
+frontend/src/types/
+└── tenant.ts                  # Extended types for multi-tenant features
+```
+
+### 🌐 Generated API Client
+```
+frontend/src/client/
+├── index.ts                   # Main client exports
+├── sdk.gen.ts                 # Generated API methods
+├── types.gen.ts               # Generated TypeScript types
+├── schemas.gen.ts             # API schemas
+└── core/                      # Client core functionality
+    ├── ApiError.ts            # Error handling
+    ├── OpenAPI.ts             # API configuration
+    └── request.ts             # HTTP request logic
+```
+
+## 🔧 Configuration Files
+
+### Backend Configuration
+```
+backend/
+├── .env                       # Environment variables
+├── pyproject.toml            # Python dependencies
+├── Dockerfile                # Container configuration
+├── docker-compose.yml        # Development setup
+└── app/alembic/
+    ├── alembic.ini           # Migration configuration
+    └── env.py                # Migration environment
+```
+
+### Frontend Configuration
+```
+frontend/
+├── .env.development          # Development environment
+├── package.json              # Node dependencies
+├── vite.config.ts           # Vite configuration
+├── tsconfig.json            # TypeScript configuration
+└── index.html               # HTML template
 ```
 
 ## 📋 Common Update Scenarios
 
 ### Adding New Database Model
-1. **Add model class** → `backend/app/models.py`
-2. **Add relationships** → Update related models in `backend/app/models.py`
-3. **Create migration** → `alembic revision --autogenerate -m "description"`
-4. **Run migration** → `alembic upgrade head`
-5. **Add CRUD operations** → `backend/app/crud.py`
+**Backend Files:**
+1. `backend/app/models.py` - Add model class
+2. `alembic revision --autogenerate` - Create migration
+3. `backend/app/crud.py` - Add CRUD operations
 
 ### Adding New API Endpoint
-1. **Create route function** → Appropriate file in `backend/app/api/routes/`
-2. **Register router** → `backend/app/api/main.py`
-3. **Add dependencies** → Use existing deps from `backend/app/api/deps.py`
-4. **Update models** → Add request/response models in `backend/app/models.py`
+**Backend Files:**
+1. `backend/app/api/routes/[module].py` - Add route
+2. `backend/app/api/main.py` - Register router
+3. `backend/app/models.py` - Add request/response models
 
-### Adding New AI Provider
-1. **Update API key service** → `backend/app/services/api_key_service.py`
-2. **Update AI proxy service** → `backend/app/services/ai_api_service.py`
-3. **Add cost calculation** → Update `_calculate_cost()` method
-4. **Add new endpoints** → `backend/app/api/routes/ai_proxy.py`
+**Frontend Files:**
+1. `frontend/src/services/[module]-service.ts` - Add API call
+2. `frontend/src/types/[module].ts` - Add TypeScript types
+
+### Adding New Page/Component
+**Frontend Files:**
+1. `frontend/src/routes/[page].tsx` - Create page component
+2. `frontend/src/components/[Module]/[Component].tsx` - Create component
+3. Update navigation in `frontend/src/components/Common/SidebarItems.tsx`
 
 ### Adding New User Role
-1. **Update TokenPayload** → `backend/app/models.py`
-2. **Add role constants** → `backend/app/shared/constants/roles.py`
-3. **Update dependencies** → `backend/app/api/deps.py`
-4. **Update role checks** → Throughout API route files
+**Backend Files:**
+1. `backend/app/models.py` - Update TokenPayload
+2. `backend/app/api/deps.py` - Add role dependencies
 
-### Modifying Email Templates
-1. **Edit MJML source** → `backend/app/email-templates/src/*.mjml`
-2. **Compile to HTML** → Use MJML extension in VS Code
-3. **Save compiled version** → `backend/app/email-templates/build/*.html`
-4. **Update template logic** → `backend/app/utils.py`
+**Frontend Files:**
+1. `frontend/src/types/tenant.ts` - Update user types
+2. `frontend/src/hooks/useAuth.ts` - Update auth hook
+3. Update role checks in components
 
-### Adding New Subscription Feature
-1. **Update SubscriptionPlan model** → `backend/app/models.py`
-2. **Create migration** → `alembic revision --autogenerate`
-3. **Update subscription service** → `backend/app/api/routes/subscriptions.py`
-4. **Update credit allocation** → `backend/app/services/credit_service.py`
+### Email Template Updates
+**Backend Files:**
+1. `backend/app/email-templates/src/*.mjml` - Edit source
+2. Compile to HTML in `backend/app/email-templates/build/`
+3. `backend/app/utils.py` - Update email logic
 
-## 🔧 Configuration Files
+## 💡 Development Workflow
 
-### Environment Configuration
-```
-📁 .env                                     # Environment variables
-📁 backend/app/core/config.py               # Settings class and validation
-```
+### Backend Development
+1. **Models** → `backend/app/models.py`
+2. **Migrations** → `alembic revision --autogenerate`
+3. **API Routes** → `backend/app/api/routes/`
+4. **Services** → `backend/app/services/`
+5. **Tests** → `backend/app/tests/`
 
-### Database Configuration
-```
-📁 backend/app/core/db.py                   # Database engine and initialization
-📁 backend/app/alembic/env.py               # Alembic migration configuration
-📁 backend/app/alembic/alembic.ini          # Alembic settings
-```
+### Frontend Development
+1. **Types** → `frontend/src/types/`
+2. **Services** → `frontend/src/services/`
+3. **Components** → `frontend/src/components/`
+4. **Routes** → `frontend/src/routes/`
+5. **Hooks** → `frontend/src/hooks/`
 
-### Dependencies & Build
-```
-📁 backend/pyproject.toml                   # Python dependencies and project config
-📁 backend/Dockerfile                       # Docker container configuration
-📁 backend/docker-compose.yml               # Local development setup
-```
-
-## 🧪 Testing Files
-
-### Test Organization
-```
-📁 backend/app/tests/conftest.py            # Test configuration and fixtures
-📁 backend/app/tests/api/routes/            # API endpoint tests
-📁 backend/app/tests/crud/                  # Database operation tests
-📁 backend/app/tests/utils/                 # Test utilities and helpers
-```
-
-### Test Utilities
-```
-📁 backend/app/tests/utils/user.py          # User creation and auth helpers
-📁 backend/app/tests/utils/item.py          # Item creation helpers
-📁 backend/app/tests/utils/utils.py         # General test utilities
-```
-
-## 🚀 Deployment & Scripts
-
-### Deployment Scripts
-```
-📁 backend/scripts/prestart.sh              # Pre-deployment setup
-📁 backend/scripts/test.sh                  # Run test suite
-📁 backend/scripts/format.sh                # Code formatting
-📁 backend/scripts/lint.sh                  # Code linting
-```
-
-### Migration Scripts
-```
-📁 backend/app/backend_pre_start.py         # Database connection check
-📁 backend/app/initial_data.py              # Initial data seeding
-📁 backend/app/tests_pre_start.py           # Test database setup
-```
-
-## 🎨 Module Structure (Future Organization)
-
-### Planned Module Organization
-```
-📁 backend/app/modules/                     # Future modular structure
-├── auth/                                   # Authentication module
-├── tenants/                                # Tenant management module
-├── subscriptions/                          # Billing and subscriptions
-├── api_keys/                               # API key management
-├── credits/                                # Credit system
-├── invitations/                            # User invitation system
-├── email/                                  # Email configuration
-├── ai_proxy/                               # AI API proxy
-└── items/                                  # Business entities
-```
-
-## 💡 Quick Tips for Updates
-
-### Before Making Changes
-1. **Check current models** → `backend/app/models.py`
-2. **Review existing tests** → `backend/app/tests/`
-3. **Check dependencies** → `backend/app/api/deps.py`
-4. **Review business logic** → Relevant service files
-
-### After Making Changes
-1. **Run tests** → `bash backend/scripts/test.sh`
-2. **Check linting** → `bash backend/scripts/lint.sh`
-3. **Update migrations** → `alembic revision --autogenerate`
-4. **Update documentation** → This file and API docs
-
-### Common Gotchas
-- **Always update both model and migration** when changing schema
-- **Check role-based access** for new endpoints
-- **Update tests** when adding new functionality
-- **Compile MJML templates** after editing email templates
-- **Check tenant isolation** for new multi-tenant features
+### Testing Strategy
+- **Backend**: API endpoint tests, CRUD tests, service tests
+- **Frontend**: Component tests, integration tests, E2E tests
+- **Database**: Migration tests, constraint tests

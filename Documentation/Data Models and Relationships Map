@@ -1,191 +1,186 @@
-# Data Models and Relationships Map
+# Database Models and Business Logic Map
 
-## Core Entities Overview
+## 🎯 Core Database Entities
 
-### Primary Models (Tables)
+### 👥 User Management Models
 
-#### 1. **Tenant** (Organizations)
-```python
-# Location: app/models.py - Tenant class
-```
-- **Purpose**: Represents client organizations
-- **Key Fields**: name, description, is_active, created_at
-- **Relationships**: 
-  - One-to-Many with Users
-  - One-to-Many with TenantApiKey
-  - One-to-Many with CreditTransaction
-  - One-to-One with EmailConfig
-
-#### 2. **User** (Platform Users)
-```python
-# Location: app/models.py - User class
-```
-- **Purpose**: All platform users (SuperAdmin, TenantAdmin, Users)
+#### **User** (Platform Users)
+- **Purpose**: All platform users across all tenants
 - **Key Fields**: email, tenant_id, role, is_active, is_superuser
 - **Roles**: "superadmin", "tenant_admin", "user"
-- **Relationships**:
-  - Many-to-One with Tenant
-  - One-to-Many with Items
-  - One-to-Many with UserSubscription
+- **Business Rule**: Email globally unique, tenant_id isolates data
 
-#### 3. **SubscriptionPlan** (Billing Plans)
-```python
-# Location: app/models.py - SubscriptionPlan class
-```
-- **Purpose**: Define subscription tiers and features
+#### **Tenant** (Organizations)
+- **Purpose**: Client organizations/companies
+- **Key Fields**: name, description, is_active, created_at
+- **Business Rule**: Each tenant has isolated workspace
+
+#### **TenantInvitation** (User Onboarding)
+- **Purpose**: Secure user invitation system
+- **Key Fields**: tenant_id, email, role, token, expires_at, is_used
+- **Business Rule**: JWT tokens with expiration, one-time use
+
+### 💳 Billing & Subscription Models
+
+#### **SubscriptionPlan** (Service Tiers)
+- **Purpose**: Define subscription offerings
 - **Key Fields**: name, price, duration_days, features[], credit_limit
-- **Features**: JSON array of plan capabilities
-- **Credit Limit**: Monthly credit allocation per user
+- **Business Rule**: Features as JSON array, credit_limit per user
 
-#### 4. **UserSubscription** (Active Subscriptions)
-```python
-# Location: app/models.py - UserSubscription class
-```
+#### **UserSubscription** (Active Subscriptions)
 - **Purpose**: Track user's current subscription
 - **Key Fields**: user_id, plan_id, start_date, end_date, status
-- **Status**: "active", "cancelled", "expired"
+- **Business Rule**: Status in ["active", "cancelled", "expired"]
 
-### Security & API Management
-
-#### 5. **TenantApiKey** (Per-Tenant API Keys)
-```python
-# Location: app/models.py - TenantApiKey class
-```
-- **Purpose**: Store encrypted API keys per tenant
-- **Key Fields**: tenant_id, provider, encrypted_key, is_active
-- **Providers**: "openai", others
-- **Security**: Keys are encrypted, never exposed to frontend
-
-#### 6. **AdminApiKey** (Global Key Pool)
-```python
-# Location: app/models.py - AdminApiKey class
-```
-- **Purpose**: SuperAdmin manages global API key pool
-- **Key Fields**: provider, encrypted_key, is_active
-- **Usage**: Keys consumed and assigned to tenants
-
-### Credit & Billing System
-
-#### 7. **CreditTransaction** (Credit Ledger)
-```python
-# Location: app/models.py - CreditTransaction class
-```
+#### **CreditTransaction** (Usage Ledger)
 - **Purpose**: Track all credit movements
 - **Key Fields**: tenant_id, user_id, amount, transaction_type, description
-- **Types**: "add", "deduct", "refund"
-- **Amount**: Positive for additions, negative for deductions
+- **Business Rule**: Positive for additions, negative for deductions
 
-### User Management
+### 🔑 Security & API Models
 
-#### 8. **TenantInvitation** (User Invitations)
-```python
-# Location: app/models.py - TenantInvitation class
-```
-- **Purpose**: Manage user invitation process
-- **Key Fields**: tenant_id, email, role, token, expires_at, is_used
-- **Security**: JWT tokens with expiration
-- **Workflow**: Create → Email → Accept → User Created
+#### **TenantApiKey** (Per-Tenant Keys)
+- **Purpose**: Encrypted API keys assigned to tenants
+- **Key Fields**: tenant_id, provider, encrypted_key, is_active
+- **Business Rule**: Keys encrypted, never exposed to frontend
 
-### Configuration
+#### **AdminApiKey** (Global Key Pool)
+- **Purpose**: SuperAdmin manages platform-wide keys
+- **Key Fields**: provider, encrypted_key, is_active
+- **Business Rule**: SuperAdmin assigns keys to tenants
 
-#### 9. **EmailConfig** (Per-Tenant Email)
-```python
-# Location: app/models.py - EmailConfig class
-```
-- **Purpose**: Tenant-specific SMTP settings
+### ⚙️ Configuration Models
+
+#### **EmailConfig** (Per-Tenant Email)
+- **Purpose**: Custom SMTP settings per tenant
 - **Key Fields**: tenant_id, smtp_host, smtp_port, smtp_user, from_email
-- **Usage**: Custom email delivery per tenant
+- **Business Rule**: Each tenant can have custom email branding
 
-#### 10. **Item** (Business Entities)
-```python
-# Location: app/models.py - Item class
-```
-- **Purpose**: Core business entities (example/template)
+#### **Item** (Business Example)
+- **Purpose**: Sample business entity (template)
 - **Key Fields**: title, description, owner_id
-- **Scope**: Per-user ownership
+- **Business Rule**: User-owned, tenant-scoped access
 
-## Key Relationships Map
+## 🔗 Critical Relationships
 
-### Tenant-Centric Relationships
+### Multi-Tenant Data Isolation
 ```
-Tenant (1) → Users (Many)
-Tenant (1) → TenantApiKey (Many)
-Tenant (1) → CreditTransaction (Many)
-Tenant (1) → EmailConfig (One)
-Tenant (1) → TenantInvitation (Many)
+Tenant (1) ──→ Users (Many)
+Tenant (1) ──→ TenantApiKey (Many)
+Tenant (1) ──→ CreditTransaction (Many)
+Tenant (1) ──→ TenantInvitation (Many)
+Tenant (1) ──→ EmailConfig (One)
 ```
 
 ### User-Centric Relationships
 ```
-User (1) → UserSubscription (Many)
-User (1) → Items (Many)
-User (1) → CreditTransaction (Many) [as user_id]
-User (1) → TenantInvitation (Many) [as created_by]
+User (1) ──→ UserSubscription (Many)
+User (1) ──→ Items (Many)
+User (1) ──→ CreditTransaction (Many) [as consumer]
 ```
 
-### Subscription Relationships
+### Billing Relationships
 ```
-SubscriptionPlan (1) → UserSubscription (Many)
-User (1) → UserSubscription (Many)
+SubscriptionPlan (1) ──→ UserSubscription (Many)
+User (1) ──→ UserSubscription (Many)
+UserSubscription ──→ Auto Credit Allocation
 ```
 
-## Critical Business Rules
+## 🎯 Business Rules & Constraints
 
 ### Data Isolation Rules
-1. **Users can only access data within their tenant** (except SuperAdmin)
-2. **API keys are tenant-specific** and encrypted
-3. **Credit transactions are tenant-scoped**
-4. **Invitations are tenant-specific**
+1. **Tenant Isolation**: All data scoped by tenant_id (except SuperAdmin)
+2. **User Access**: Users can only access their tenant's data
+3. **API Keys**: Encrypted and tenant-specific
+4. **Credits**: Tracked per tenant and user
 
-### Role-Based Access Rules
-1. **SuperAdmin**: Global access to all tenants and data
-2. **TenantAdmin**: Full access within their tenant only
-3. **User**: Limited access within their tenant
+### Security Rules
+1. **Email Uniqueness**: Globally unique across all tenants
+2. **API Key Encryption**: Keys encrypted before database storage
+3. **Role Enforcement**: JWT tokens contain tenant_id and role
+4. **Invitation Security**: JWT tokens with expiration and one-time use
 
 ### Credit System Rules
-1. **Credits are allocated per user** based on subscription plan
-2. **API usage deducts from user's credit balance**
-3. **All credit movements are logged** in CreditTransaction
-4. **Negative balances prevent API usage**
+1. **Credit Allocation**: Based on subscription plan limits
+2. **Usage Tracking**: All movements logged in CreditTransaction
+3. **Balance Calculation**: Real-time from transaction history
+4. **Negative Prevention**: API calls blocked when credits insufficient
 
-### API Key Security Rules
-1. **Keys are encrypted** before database storage
-2. **Frontend never receives actual keys**
-3. **SuperAdmin manages global key pool**
-4. **Tenants get assigned keys automatically**
+### Subscription Rules
+1. **Plan Features**: JSON array defines available capabilities
+2. **User Limits**: Credit allocation per user based on plan
+3. **Status Management**: Active subscriptions enable features
+4. **Automatic Billing**: Credits allocated on subscription start
 
-## Database Constraints
+## 📊 Database Constraints
 
-### Foreign Key Relationships
+### Primary Relationships
 - User.tenant_id → Tenant.id
 - UserSubscription.user_id → User.id
 - UserSubscription.plan_id → SubscriptionPlan.id
 - TenantApiKey.tenant_id → Tenant.id
 - CreditTransaction.tenant_id → Tenant.id
-- CreditTransaction.user_id → User.id
-- Item.owner_id → User.id
 - TenantInvitation.tenant_id → Tenant.id
 - EmailConfig.tenant_id → Tenant.id
+- Item.owner_id → User.id
 
 ### Unique Constraints
-- User.email (globally unique)
-- TenantApiKey (one active key per provider per tenant)
-- AdminApiKey (one active key per provider globally)
+- User.email (platform-wide unique)
+- TenantApiKey.tenant_id + provider (one key per provider per tenant)
+- AdminApiKey.provider (one global key per provider)
+- EmailConfig.tenant_id (one config per tenant)
 
-## Model Location Reference
+## 🏗️ File Locations
 
-All models are defined in: **`backend/app/models.py`**
+### Backend Models
+- **All Models**: `backend/app/models.py`
+- **Database Operations**: `backend/app/crud.py`
+- **Migrations**: `backend/app/alembic/versions/`
 
-### Response Models (API)
-- `UserPublic`, `TenantPublic`, `SubscriptionPlanPublic`
-- `CreditTransactionPublic`, `TenantApiKeyPublic`
-- `UserSubscriptionPublic`, `TenantInvitationPublic`
+### Frontend Types
+- **Generated Types**: `frontend/src/client/types.gen.ts`
+- **Extended Types**: `frontend/src/types/tenant.ts`
+- **API Client**: `frontend/src/client/sdk.gen.ts`
 
-### Create/Update Models
-- `UserCreate`, `UserUpdate`, `TenantCreate`, `TenantUpdate`
-- `SubscriptionPlanCreate`, `SubscriptionPlanUpdate`
-- `CreditTransactionCreate`, `TenantInvitationCreate`
+## 🔄 Common Model Operations
 
-### Utility Models
-- `Message`, `Token`, `TokenPayload`
-- `UpdatePassword`, `NewPassword`
+### Adding New Model
+1. **Define in models.py** with relationships
+2. **Generate migration** with Alembic
+3. **Add CRUD operations** in crud.py
+4. **Update API routes** for new endpoints
+5. **Generate frontend types** from OpenAPI
+
+### Modifying Existing Model
+1. **Update model definition** in models.py
+2. **Create migration** for schema changes
+3. **Update related CRUD** operations
+4. **Test migration** with existing data
+5. **Update frontend types** if needed
+
+### Adding Relationships
+1. **Define foreign keys** in models
+2. **Add relationship properties** (back_populates)
+3. **Update database constraints**
+4. **Test relationship queries**
+5. **Update API responses** to include related data
+
+## 💡 Model Design Patterns
+
+### Multi-Tenant Pattern
+- **Shared Schema**: All tenants use same tables
+- **Tenant ID**: Every tenant-scoped model has tenant_id
+- **Access Control**: API layer enforces tenant isolation
+- **SuperAdmin Exception**: Can access cross-tenant data
+
+### Credit System Pattern
+- **Ledger Approach**: All movements tracked as transactions
+- **Balance Calculation**: Sum transactions for current balance
+- **Audit Trail**: Complete history of credit usage
+- **Real-time Updates**: Balance checked before API usage
+
+### Security Pattern
+- **Encryption at Rest**: API keys encrypted in database
+- **JWT Claims**: Tokens include tenant_id and role
+- **Role-based Access**: Different permissions per role
+- **Invitation Tokens**: Secure user onboarding with expiring tokens

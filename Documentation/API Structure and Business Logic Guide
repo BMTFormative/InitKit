@@ -1,285 +1,254 @@
-# API Structure and Business Logic Guide
+# API Structure and Business Flow Guide
 
-## API Endpoint Organization
+## 🌐 Backend API Organization
 
-### Core API Structure
+### 📍 API Endpoint Structure
 **Base Path**: `/api/v1`
 
-### Authentication Endpoints
-**File**: `app/api/routes/login.py`
-```
-POST /login/access-token          # Login with email/password
-POST /login/test-token           # Validate JWT token
-POST /password-recovery/{email}   # Request password reset
-POST /reset-password/            # Reset password with token
-POST /login/accept-invitation    # Accept invitation and create account
-```
+### 🔐 Authentication System
+**File**: `backend/app/api/routes/login.py`
+- **Login Flow**: Email/password → JWT token with tenant_id + role
+- **Password Recovery**: Email-based reset with secure tokens
+- **Invitation Acceptance**: JWT validation → User creation + tenant assignment
+- **Token Validation**: Verify JWT and return user info
 
-### User Management
-**File**: `app/api/routes/users.py`
-```
-GET    /users/                   # List all users (SuperAdmin)
-POST   /users/                   # Create user (SuperAdmin)
-GET    /users/me                 # Get current user
-PATCH  /users/me                 # Update current user
-PATCH  /users/me/password        # Change password
-DELETE /users/me                 # Delete own account
-POST   /users/signup             # Register new user (creates tenant)
-GET    /users/me/credit-balance  # Get current user's credits
-GET    /users/{id}/credit-balance # Get any user's credits (Admin)
-GET    /users/{id}               # Get user by ID
-PATCH  /users/{id}               # Update user (SuperAdmin)
-DELETE /users/{id}               # Delete user (SuperAdmin)
-```
+### 👤 User Management System
+**File**: `backend/app/api/routes/users.py`
+- **User CRUD**: Create, read, update, delete users
+- **Profile Management**: Update personal information
+- **Password Management**: Secure password changes
+- **Credit Balance**: Real-time credit tracking per user
+- **Self-Service**: Account deletion and profile updates
 
-### Tenant Management
-**File**: `app/api/routes/tenants.py`
-```
-POST   /tenants/                 # Create tenant (SuperAdmin)
-GET    /tenants/                 # List tenants (SuperAdmin)
-GET    /tenants/{id}             # Get tenant with credit balance
-PATCH  /tenants/{id}             # Update tenant (SuperAdmin)
-DELETE /tenants/{id}             # Delete tenant (SuperAdmin)
-```
+### 🏢 Tenant Management System
+**File**: `backend/app/api/routes/tenants.py`
+- **Tenant CRUD**: Organization management (SuperAdmin only)
+- **Tenant Discovery**: List and search tenants
+- **Tenant Analytics**: Credit balance and usage statistics
 
-### Tenant User Management
-**File**: `app/api/routes/tenant_users.py`
-```
-GET    /tenants/{id}/users/           # List tenant users
-POST   /tenants/{id}/users/invitations # Create invitation
-GET    /tenants/{id}/users/invitations # List invitations
-DELETE /tenants/{id}/users/invitations/{inv_id} # Delete invitation
-PATCH  /tenants/{id}/users/{user_id}  # Update tenant user
-```
+### 👥 Tenant User Management
+**File**: `backend/app/api/routes/tenant_users.py`
+- **User Invitation**: Create secure invitation tokens
+- **Invitation Management**: List, delete pending invitations
+- **User Status**: Enable/disable tenant users
+- **Role Management**: Assign and modify user roles within tenant
 
-### API Key Management
-**Files**: `app/api/routes/tenant_api_keys.py`, `app/api/routes/admin_api_keys.py`
-```
-# Tenant API Keys
-POST   /tenants/{id}/api-keys/         # Create/rotate tenant key
-GET    /tenants/{id}/api-keys/         # List tenant keys
-PATCH  /tenants/{id}/api-keys/{key_id} # Update key status
-DELETE /tenants/{id}/api-keys/{key_id} # Delete key
+### 🔑 API Key Management
+**Files**: Multiple key management endpoints
 
-# Admin API Keys (SuperAdmin only)
-POST   /admin/api-keys/               # Create global key
-GET    /admin/api-keys/               # List global keys
-PATCH  /admin/api-keys/{key_id}       # Update key status
-DELETE /admin/api-keys/{key_id}       # Delete key
+#### Tenant API Keys
+**File**: `backend/app/api/routes/tenant_api_keys.py`
+- **Key Assignment**: Assign encrypted keys to tenants
+- **Key Status**: Enable/disable keys per tenant
+- **Key Rotation**: Update keys without service interruption
 
-# Cross-tenant view (SuperAdmin only)
-GET    /admin/tenant-api-keys/        # View all tenant keys
-```
+#### Admin API Keys
+**File**: `backend/app/api/routes/admin_api_keys.py`
+- **Global Key Pool**: SuperAdmin manages platform keys
+- **Key Distribution**: Assign keys from pool to tenants
+- **Key Monitoring**: Track usage across all tenants
 
-### Credit Management
-**File**: `app/api/routes/tenant_credits.py`
-```
-POST   /tenants/{id}/credits/         # Add credits (SuperAdmin)
-GET    /tenants/{id}/credits/         # List credit transactions
-```
+### 💳 Subscription & Billing
+**File**: `backend/app/api/routes/subscriptions.py`
+- **Plan Management**: Create, update subscription plans
+- **User Subscriptions**: Subscribe users to plans
+- **Subscription Status**: Track active, cancelled, expired subscriptions
+- **Feature Access**: Plan-based feature enablement
 
-### Subscription Management
-**File**: `app/api/routes/subscriptions.py`
-```
-# Public plan listing
-GET    /subscriptions/plans           # List available plans
+### 💰 Credit Management
+**File**: `backend/app/api/routes/tenant_credits.py`
+- **Credit Allocation**: Add credits to tenant/user accounts
+- **Transaction History**: Complete audit trail of credit usage
+- **Balance Tracking**: Real-time credit balance calculation
+- **Usage Analytics**: Credit consumption patterns
 
-# Plan management (SuperAdmin)
-POST   /subscriptions/plans           # Create plan
-PATCH  /subscriptions/plans/{id}      # Update plan
-DELETE /subscriptions/plans/{id}      # Delete plan
+### 🤖 AI API Proxy
+**File**: `backend/app/api/routes/ai_proxy.py`
+- **OpenAI Proxy**: Secure proxy to OpenAI API
+- **Cost Calculation**: Real-time credit deduction
+- **Usage Tracking**: Log all API calls and costs
+- **Balance Enforcement**: Block calls when credits insufficient
 
-# User subscriptions
-POST   /subscriptions/subscribe       # Subscribe to plan
-GET    /subscriptions/my-subscription # Get current subscription
-PATCH  /subscriptions/subscription/{id} # Update subscription
+### 📧 Email Configuration
+**File**: `backend/app/api/routes/tenant_email_config.py`
+- **SMTP Setup**: Per-tenant email configuration
+- **Email Testing**: Validate SMTP settings
+- **Template Management**: Custom email branding per tenant
 
-# Admin subscription management
-POST   /subscriptions/subscribe/{user_id} # Subscribe user (Admin)
-POST   /subscriptions/tenants/{id}/bulk-subscribe # Bulk subscribe tenant
-```
+### 🏗️ Business Entity Management
+**File**: `backend/app/api/routes/items.py`
+- **Entity CRUD**: Example business entity management
+- **Tenant Isolation**: Data scoped to user's tenant
+- **Access Control**: Role-based entity access
 
-### AI API Proxy
-**File**: `app/api/routes/ai_proxy.py`
-```
-POST   /ai-proxy/openai/{endpoint:path} # Proxy OpenAI requests with credit deduction
-```
+## ⚙️ Service Layer Architecture
 
-### Email Configuration
-**File**: `app/api/routes/tenant_email_config.py`
-```
-GET    /tenants/{id}/email-config/    # Get tenant email config
-POST   /tenants/{id}/email-config/    # Create/update email config
-POST   /tenants/{id}/email-config/test # Send test email
-```
-
-### Utility Endpoints
-**File**: `app/api/routes/utils.py`
-```
-POST   /utils/test-email/             # Send test email (SuperAdmin)
-GET    /utils/health-check/           # Health check endpoint
-```
-
-### Business Items (Example Entity)
-**File**: `app/api/routes/items.py`
-```
-GET    /items/                       # List items (filtered by user/tenant)
-POST   /items/                       # Create item
-GET    /items/{id}                   # Get item by ID
-PUT    /items/{id}                   # Update item
-DELETE /items/{id}                   # Delete item
-```
-
-## Service Layer Organization
-
-### Core Services
-**Location**: `app/services/`
+### 🔧 Core Business Services
+**Location**: `backend/app/services/`
 
 #### API Key Service
-**File**: `app/services/api_key_service.py`
-- **Purpose**: Encrypt/decrypt API keys, manage key lifecycle
-- **Key Methods**:
-  - `encrypt_key()` / `decrypt_key()`
-  - `create_tenant_api_key()`
-  - `get_active_key_for_tenant()`
-  - `consume_admin_api_key()`
+**File**: `backend/app/services/api_key_service.py`
+- **Encryption/Decryption**: Secure key storage and retrieval
+- **Key Lifecycle**: Creation, assignment, rotation, deletion
+- **Tenant Assignment**: Automatic key allocation to new tenants
+- **Pool Management**: Global key pool for SuperAdmin
 
 #### Credit Service
-**File**: `app/services/credit_service.py`
-- **Purpose**: Handle all credit operations and balance calculations
-- **Key Methods**:
-  - `get_tenant_balance()` / `get_user_balance()`
-  - `add_credits()` / `deduct_credits()`
-  - `deduct_user_credits()`
-  - `refund_transaction()`
+**File**: `backend/app/services/credit_service.py`
+- **Balance Calculation**: Real-time credit balance from transactions
+- **Credit Operations**: Add, deduct, refund credit transactions
+- **Usage Tracking**: Monitor credit consumption patterns
+- **Plan Integration**: Automatic credit allocation based on subscriptions
 
 #### Invitation Service
-**File**: `app/services/invitation_service.py`
-- **Purpose**: Handle user invitation and onboarding flow
-- **Key Methods**:
-  - `create_invitation()` - Creates invitation with JWT token
-  - `accept_invitation()` - Validates token and creates user
-  - `_send_welcome_email()` - Welcome email after registration
+**File**: `backend/app/services/invitation_service.py`
+- **Token Generation**: Secure JWT tokens for invitations
+- **Email Delivery**: Send invitation emails with secure links
+- **User Creation**: Validate tokens and create new users
+- **Tenant Assignment**: Automatic role and tenant assignment
 
-#### AI API Proxy Service
-**File**: `app/services/ai_api_service.py`
-- **Purpose**: Proxy AI API calls with cost calculation and credit deduction
-- **Key Methods**:
-  - `proxy_openai_request()` - Main proxy logic
-  - `_estimate_tokens()` / `_calculate_cost()`
-  - Automatic credit deduction and refund on failure
+#### AI Proxy Service
+**File**: `backend/app/services/ai_api_service.py`
+- **Request Proxying**: Secure proxy to external AI APIs
+- **Cost Estimation**: Calculate credit cost before API calls
+- **Usage Deduction**: Automatic credit deduction during API usage
+- **Error Handling**: Refund credits on failed API calls
 
-## Business Logic Flows
-
-### User Invitation Flow
-```
-1. TenantAdmin creates invitation (TenantInvitationCreate)
-2. InvitationService.create_invitation()
-   - Generates JWT token with tenant info
-   - Sends email with invitation link
-3. User clicks link → Frontend handles acceptance
-4. Frontend calls /login/accept-invitation
-5. InvitationService.accept_invitation()
-   - Validates JWT token
-   - Creates User with tenant_id and role
-   - Auto-subscribes to plan
-   - Allocates initial credits
-   - Sends welcome email
-```
-
-### API Usage Flow
-```
-1. User makes API request to /ai-proxy/openai/*
-2. Authentication middleware validates JWT
-3. AiApiProxyService.proxy_openai_request()
-   - Gets tenant's API key
-   - Estimates cost in credits
-   - Pre-deducts credits from user balance
-   - Proxies request to OpenAI
-   - Adjusts credit deduction based on actual usage
-   - Returns response to user
-```
-
-### Subscription Flow
-```
-1. User subscribes to plan (/subscriptions/subscribe)
-2. CreditService allocates credits based on plan.credit_limit
-3. User makes API calls → credits deducted
-4. When credits low → user needs to upgrade/renew
-```
-
-### Tenant Onboarding Flow
-```
-1. User registers (/users/signup)
-2. System auto-creates Tenant
-3. User becomes TenantAdmin of new tenant
-4. ApiKeyService.consume_admin_api_key() assigns OpenAI key
-5. Ready to invite users and start using platform
-```
-
-## Authentication & Authorization
+## 🔒 Authentication & Authorization
 
 ### JWT Token Structure
-**File**: `app/models.py - TokenPayload`
-```python
-{
-  "sub": "user_id",
-  "tenant_id": "tenant_uuid", 
-  "role": "superadmin|tenant_admin|user",
-  "exp": "expiration_timestamp"
-}
-```
+**Components**: User ID, Tenant ID, Role, Expiration
+**Usage**: Every API request validates token and extracts claims
+**Security**: Tokens signed with secret key, expiration enforced
 
 ### Role-Based Access Control
-**File**: `app/api/deps.py`
+**File**: `backend/app/api/deps.py`
 
-#### Dependency Functions
-- `get_current_user()` - Basic authentication
-- `get_current_user_with_tenant()` - Includes tenant/role info
-- `require_super_admin()` - SuperAdmin only
-- `require_tenant_admin()` - TenantAdmin+ access
-- `require_same_tenant()` - Tenant isolation enforcement
-
-### Permission Hierarchy
-1. **SuperAdmin**: Full platform access
-2. **TenantAdmin**: Full access within their tenant
+#### Permission Levels
+1. **SuperAdmin**: Platform-wide access, all tenants, all operations
+2. **TenantAdmin**: Full access within their tenant only
 3. **User**: Limited access within their tenant
 
-## Configuration Files
+#### Access Dependencies
+- **Authentication**: Validate JWT token
+- **Authorization**: Check role permissions
+- **Tenant Isolation**: Enforce tenant data access
+- **Feature Access**: Subscription-based feature enablement
+
+## 🔄 Critical Business Flows
+
+### User Invitation & Onboarding
+```
+1. TenantAdmin creates invitation
+   ↓ InvitationService.create_invitation()
+2. System generates JWT token + sends email
+   ↓ Email with secure invitation link
+3. User clicks link → Frontend invitation page
+   ↓ User completes registration form
+4. Frontend calls /login/accept-invitation
+   ↓ InvitationService.accept_invitation()
+5. User created + tenant assignment + credit allocation
+```
+
+### AI API Usage & Billing
+```
+1. User makes API request
+   ↓ Authentication + permission validation
+2. Get tenant's API key + check credit balance
+   ↓ AiApiService.proxy_openai_request()
+3. Estimate cost + pre-deduct credits
+   ↓ Proxy request to OpenAI API
+4. Calculate actual cost + adjust credit deduction
+   ↓ Log transaction + return response
+5. Real-time balance update in frontend
+```
+
+### Subscription & Credit Allocation
+```
+1. User subscribes to plan
+   ↓ SubscriptionService.create_subscription()
+2. Calculate credit allocation based on plan
+   ↓ CreditService.allocate_plan_credits()
+3. Create credit transaction records
+   ↓ Update user's available credit balance
+4. Enable plan features for user
+```
+
+### Tenant Onboarding
+```
+1. New user registration
+   ↓ User creates account + organization
+2. Auto-create tenant entity
+   ↓ User becomes TenantAdmin of new tenant
+3. Assign API key from global pool
+   ↓ ApiKeyService.consume_admin_key()
+4. Ready to invite users + use platform
+```
+
+## 🎨 Frontend Service Integration
+
+### API Service Organization
+**Location**: `frontend/src/services/`
+
+#### Service Mapping
+- **TenantService**: Tenant CRUD operations
+- **TenantUserService**: User management within tenants
+- **ApiKeyService**: API key management
+- **CreditService**: Credit transactions and balance
+- **InvitationService**: User invitation flow
+- **EmailConfigService**: Email configuration
+- **GlobalApiKeyService**: SuperAdmin key management
+
+#### Integration Patterns
+- **TanStack Query**: Server state management and caching
+- **Error Handling**: Centralized error processing
+- **Loading States**: UI feedback during API calls
+- **Optimistic Updates**: Immediate UI updates with rollback
+
+## 🔧 Configuration & Setup
 
 ### Core Configuration
-**File**: `app/core/config.py`
-- Database connection settings
-- JWT configuration
-- Email settings (SMTP)
-- Environment-specific settings
+**File**: `backend/app/core/config.py`
+- **Database Settings**: PostgreSQL connection configuration
+- **JWT Configuration**: Secret keys and token expiration
+- **Email Settings**: SMTP configuration for notifications
+- **External APIs**: OpenAI and other service configurations
 
-### Database Setup
-**File**: `app/core/db.py`
-- Database engine initialization
-- Initial data seeding (superuser, subscription plans)
+### Database Management
+**File**: `backend/app/core/db.py`
+- **Connection Management**: Database engine and session handling
+- **Initial Data**: Seed data for SuperAdmin and default plans
+- **Migration Support**: Alembic integration for schema changes
 
-### Security Utilities
-**File**: `app/core/security.py`
-- JWT token creation/validation
-- Password hashing
-- Access token management
+### Security Configuration
+**File**: `backend/app/core/security.py`
+- **Password Hashing**: Secure password storage
+- **JWT Management**: Token creation and validation
+- **Access Control**: Role-based permission enforcement
 
-## Key Integration Points
+## 📊 API Documentation & Testing
 
-### External API Integration
-- **OpenAI API**: Proxied through `/ai-proxy/openai/*`
-- **Email SMTP**: Both global and per-tenant configuration
-- **Future**: Other AI providers, payment systems
+### OpenAPI Integration
+- **Automatic Documentation**: FastAPI generates OpenAPI specs
+- **Interactive Testing**: Swagger UI for API exploration
+- **Type Safety**: Pydantic models ensure request/response validation
 
-### Frontend Integration Points
-- JWT-based authentication
-- Role-based route protection
-- Real-time credit balance updates
-- Tenant-scoped data access
+### Testing Strategy
+- **Endpoint Testing**: Comprehensive API endpoint coverage
+- **Authentication Testing**: Role-based access verification
+- **Business Logic Testing**: Service layer unit tests
+- **Integration Testing**: Full workflow testing
 
-### Database Migration Strategy
-**Files**: `app/alembic/versions/`
-- Incremental schema changes
-- Data migration scripts
-- Rollback capabilities
+## 🚀 Scalability Considerations
+
+### Current Architecture Benefits
+- **Stateless Design**: Easy horizontal scaling
+- **Service Separation**: Independent scaling of components
+- **Caching Strategy**: TanStack Query reduces API load
+- **Efficient Queries**: Optimized database operations
+
+### Future Enhancement Ready
+- **Additional AI Providers**: Modular proxy service design
+- **Custom Billing**: Flexible credit and subscription system
+- **Advanced Analytics**: Comprehensive usage tracking
+- **Multi-Region**: Tenant-based geographic distribution
