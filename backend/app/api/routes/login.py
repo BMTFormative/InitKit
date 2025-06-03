@@ -1,16 +1,21 @@
 from datetime import timedelta
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core import security
+from app.services.invitation_service import InvitationService
 from app.core.config import settings
 from app.core.security import get_password_hash
-from app.models import Message, NewPassword, Token, UserPublic
+from app.models import Message, NewPassword, Token, UserPublic, UserCreate, User
+from app.services.api_key_service import ApiKeyService
+from app.services.credit_service import CreditService
+from app.models import SubscriptionPlan
+from sqlmodel import select
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
@@ -19,6 +24,7 @@ from app.utils import (
 )
 
 router = APIRouter(tags=["login"])
+api_key_service = ApiKeyService(settings.API_KEY_ENCRYPTION_KEY)
 
 
 @router.post("/login/access-token")
@@ -36,11 +42,38 @@ def login_access_token(
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return Token(
-        access_token=security.create_access_token(
-            user.id, expires_delta=access_token_expires
-        )
+    
+    # Create token payload with role and tenant_id
+    # Use is_superuser to grant global super-admin role
+    token_data = {
+        "sub": str(user.id),
+        "role": "superadmin" if user.is_superuser else user.role
+    }
+    
+    # Only add tenant_id if it exists
+    if user.tenant_id:
+        token_data["tenant_id"] = str(user.tenant_id)
+    
+    # Create the JWT
+    token_str = security.create_access_token(
+        token_data, expires_delta=access_token_expires
     )
+    # On first login, give the tenant an active Admin API key if they have none
+    if user.tenant_id:
+        # Only assign one unique global key per tenant
+        existing = api_key_service.get_active_key_for_tenant(
+            session, user.tenant_id, "openai"
+        )
+        if not existing:
+            # Consume the next available Admin API key for this provider
+            raw_key = api_key_service.consume_admin_api_key(
+                session, "openai"
+            )
+            if raw_key:
+                api_key_service.create_tenant_api_key(
+                    session, user.tenant_id, "openai", raw_key
+                )
+    return Token(access_token=token_str)
 
 
 @router.post("/login/test-token", response_model=UserPublic)
@@ -122,3 +155,19 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
     return HTMLResponse(
         content=email_data.html_content, headers={"subject:": email_data.subject}
     )
+@router.post("/login/accept-invitation", response_model=UserPublic)
+def accept_invitation(
+    session: SessionDep,
+    token: str = Body(...),
+    user_data: UserCreate = Body(...),
+) -> User:
+    """
+    Accept an invitation and create a new user
+    """
+    invitation_service = InvitationService()
+    user = invitation_service.accept_invitation(
+        session=session,
+        token=token,
+        user_data=user_data
+    )
+    return user
