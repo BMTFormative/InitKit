@@ -40,7 +40,7 @@ cd backend
 alembic upgrade head
 (This will create tables in your Postgres DB.)
 
-7-Run the FastAPI backend
+# 7-Run the FastAPI backend
 From backend folder, ensure your venv is active, then:
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 Visit http://localhost:8000/docs to confirm it’s working.
@@ -55,7 +55,7 @@ Start the React dev server:
 npm run dev
 Visit http://localhost:3000 (or the port shown) to see the UI.
 
-9-Initialize your own GitHub repository
+# 9-Initialize your own GitHub repository
 a. On GitHub, create an empty repo (e.g. my-fastapi-template)
 b. In your project root, remove the origin and add yours:
 c. move the files
@@ -65,3 +65,36 @@ git commit -m "first commit"
 git branch -M main
 git remote add origin https://github.com/BMTFormative/InitKit.git
 git push -u origin main
+
+# Creating the First Superuser Admin
+python -m app.initial_data
+# problem 
+problem in migration
+rm -r backend/app/alembic/versions/\*.py
+alembic revision --autogenerate -m "initial_setup"
+alembic upgrade head
+
+to create subcription
+
+alembic revision --autogenerate -m "add subscription models"
+
+---
+
+How to Run Backend
+.venv\Scripts\Activate.ps1
+
+
+how to run frontend
+npm run dev
+
+
+how to  Reset Alembic
+# For PostgreSQL
+psql -U your_username -d your_database_name -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+# Remove all files in the versions directory (except __init__.py)
+rm -r backend/app/alembic/versions/\*.py
+# Generate a new migration based on your current models
+cd backend
+alembic revision --autogenerate -m "initial_migration"
+# Apply the migration to create all tables
+alembic upgrade head
