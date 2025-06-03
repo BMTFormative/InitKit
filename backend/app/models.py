@@ -61,6 +61,7 @@ class User(UserBase, table=True):
     role: str = Field(max_length=20, default="user")  # "superadmin", "tenant_admin", "user"
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
     subscription: list["UserSubscription"] = Relationship(back_populates="user", cascade_delete=True)
+    payment_methods: list["PaymentMethod"] = Relationship(back_populates="user", cascade_delete=True)
 
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
@@ -190,7 +191,7 @@ class UserSubscriptionBase(SQLModel):
 # Properties to receive on subscription creation
 class UserSubscriptionCreate(SQLModel):
     plan_id: uuid.UUID
-
+    payment_method_id: str | None = None
 
 # Properties to receive on subscription update
 class UserSubscriptionUpdate(SQLModel):
@@ -360,3 +361,37 @@ class EmailConfig(EmailConfigBase, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     tenant: "Tenant" = Relationship(back_populates="email_config")
+
+class PaymentMethod(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(foreign_key="user.id", ondelete="CASCADE")
+    stripe_payment_method_id: str  # Stripe payment method ID
+    card_last_four: str = Field(max_length=4)
+    card_brand: str = Field(max_length=20)  # visa, mastercard, etc.
+    exp_month: int
+    exp_year: int
+    is_default: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    user: User = Relationship(back_populates="payment_methods")
+
+class PaymentTransaction(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(foreign_key="user.id")
+    subscription_id: uuid.UUID = Field(foreign_key="usersubscription.id")
+    stripe_payment_intent_id: str
+    amount: float
+    currency: str = Field(default="usd")
+    status: str  # succeeded, failed, pending
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class PaymentMethodPublic(SQLModel):
+    id: uuid.UUID
+    card_last_four: str
+    card_brand: str
+    exp_month: int
+    exp_year: int
+    is_default: bool
+    created_at: datetime
+
+class PaymentMethodCreate(SQLModel):
+    stripe_payment_method_id: str

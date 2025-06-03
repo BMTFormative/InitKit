@@ -6,8 +6,9 @@ from app.api.routes import (
 )
 from app.api.routes import admin_api_keys, admin_tenant_api_keys
 from app.core.config import settings
-
+from app.api.routes import payment
 api_router = APIRouter()
+api_router.include_router(payment.router)
 api_router.include_router(login.router, tags=["login"])
 api_router.include_router(users.router)
 api_router.include_router(utils.router, prefix="/utils", tags=["utils"])

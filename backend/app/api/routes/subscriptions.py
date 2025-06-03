@@ -3,7 +3,7 @@ from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import func, select, SQLModel, Field
-
+from app.services.payment_service import PaymentService
 from app import crud
 from app.api.deps import (
     CurrentUser,
@@ -135,6 +135,13 @@ def subscribe_to_plan(
     if not plan or not plan.is_active:
         raise HTTPException(status_code=400, detail="Invalid or inactive plan")
     
+    # Check if payment method is required for paid plans
+    if plan.price > 0 and not subscription_in.payment_method_id:
+        raise HTTPException(
+            status_code=400, 
+            detail="Payment method required for paid plans"
+        )
+    
     # Check if user already has an active subscription
     existing_subscription = crud.get_user_subscription(
         session=session, user_id=current_user.id
@@ -152,8 +159,15 @@ def subscribe_to_plan(
         plan_id=subscription_in.plan_id
     )
     session.refresh(subscription)
+    
+    # TODO: Process payment for paid plans when payment_method_id is provided
+    # For now, we'll skip actual payment processing
+    if plan.price > 0 and subscription_in.payment_method_id:
+        # In a real implementation, you would process the payment here
+        # payment_service.process_subscription_payment(...)
+        pass
+    
     # Allocate initial credit to user based on plan's credit limit
-    plan = session.get(SubscriptionPlan, subscription_in.plan_id)
     try:
         credit_limit = getattr(plan, 'credit_limit', 0) or 0
     except Exception:
