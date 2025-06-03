@@ -15,8 +15,11 @@ import { Route as SignupImport } from './routes/signup'
 import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as RecoverPasswordImport } from './routes/recover-password'
 import { Route as LoginImport } from './routes/login'
+import { Route as AcceptInvitationImport } from './routes/accept-invitation'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
+import { Route as LayoutTenantUsersImport } from './routes/_layout/tenant-users'
+import { Route as LayoutSubscriptionsImport } from './routes/_layout/subscriptions'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
 import { Route as LayoutItemsImport } from './routes/_layout/items'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
@@ -43,6 +46,11 @@ const LoginRoute = LoginImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const AcceptInvitationRoute = AcceptInvitationImport.update({
+  path: '/accept-invitation',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const LayoutRoute = LayoutImport.update({
   id: '/_layout',
   getParentRoute: () => rootRoute,
@@ -50,6 +58,16 @@ const LayoutRoute = LayoutImport.update({
 
 const LayoutIndexRoute = LayoutIndexImport.update({
   path: '/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutTenantUsersRoute = LayoutTenantUsersImport.update({
+  path: '/tenant-users',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutSubscriptionsRoute = LayoutSubscriptionsImport.update({
+  path: '/subscriptions',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -74,6 +92,10 @@ declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/_layout': {
       preLoaderRoute: typeof LayoutImport
+      parentRoute: typeof rootRoute
+    }
+    '/accept-invitation': {
+      preLoaderRoute: typeof AcceptInvitationImport
       parentRoute: typeof rootRoute
     }
     '/login': {
@@ -104,6 +126,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/subscriptions': {
+      preLoaderRoute: typeof LayoutSubscriptionsImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/tenant-users': {
+      preLoaderRoute: typeof LayoutTenantUsersImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/': {
       preLoaderRoute: typeof LayoutIndexImport
       parentRoute: typeof LayoutImport
@@ -118,8 +148,11 @@ export const routeTree = rootRoute.addChildren([
     LayoutAdminRoute,
     LayoutItemsRoute,
     LayoutSettingsRoute,
+    LayoutSubscriptionsRoute,
+    LayoutTenantUsersRoute,
     LayoutIndexRoute,
   ]),
+  AcceptInvitationRoute,
   LoginRoute,
   RecoverPasswordRoute,
   ResetPasswordRoute,
