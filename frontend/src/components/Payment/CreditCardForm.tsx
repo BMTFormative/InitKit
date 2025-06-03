@@ -100,7 +100,7 @@ export const CreditCardForm = ({ onSubmit, loading }: CreditCardFormProps) => {
   };
 
   return (
-    <Box p={6} borderWidth="1px" borderRadius="lg" bg="white">
+    <Box p={6} borderWidth="1px" borderRadius="lg" bg="white" shadow="md" >
       <VStack gap={2} align="start" mb={6}>
         <Text fontSize="lg" fontWeight="semibold">
           Payment Information
@@ -139,7 +139,7 @@ export const CreditCardForm = ({ onSubmit, loading }: CreditCardFormProps) => {
           {/* Expiry Date and CVC */}
           <HStack gap={4} width="100%">
             <Field.Root flex={1}>
-              <Field.Label>Expiry Month</Field.Label>
+              <Field.Label textStyle="xs">Expiry Month</Field.Label>
               <InputGroup startElement={<FiCalendar />}>
                 <Input
                   placeholder="MM"
@@ -151,7 +151,7 @@ export const CreditCardForm = ({ onSubmit, loading }: CreditCardFormProps) => {
             </Field.Root>
 
             <Field.Root flex={1}>
-              <Field.Label>Expiry Year</Field.Label>
+              <Field.Label textStyle="xs">Expiry Year</Field.Label>
               <Input
                 placeholder="YY"
                 value={expYear}
@@ -161,7 +161,7 @@ export const CreditCardForm = ({ onSubmit, loading }: CreditCardFormProps) => {
             </Field.Root>
 
             <Field.Root flex={1}>
-              <Field.Label>CVC</Field.Label>
+              <Field.Label textStyle="xs">CVC</Field.Label>
               <InputGroup startElement={<FiLock />}>
                 <Input
                   placeholder="123"

@@ -59,7 +59,9 @@ function SignUp() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [step, setStep] = useState<SignupStep>("form");
-  const [userFormData, setUserFormData] = useState<UserRegisterForm | null>(null);
+  const [userFormData, setUserFormData] = useState<UserRegisterForm | null>(
+    null
+  );
 
   const {
     register,
@@ -151,7 +153,7 @@ function SignUp() {
   const handlePlanSelect = (plan: any) => {
     setSelectedPlanId(plan.id);
     setSelectedPlan(plan);
-    
+
     // If plan is free (price = 0), skip payment step
     if (plan.price === 0) {
       handleCompleteSignup();
@@ -167,7 +169,7 @@ function SignUp() {
     try {
       // Create user account first
       await signUpMutation.mutateAsync(userFormData);
-      
+
       // Subscribe to selected plan
       await subscribeWithPaymentMutation.mutateAsync({
         planId: selectedPlanId,
@@ -185,7 +187,9 @@ function SignUp() {
       );
       navigate({ to: "/login" });
     } catch (error: any) {
-      showErrorToast(error.message || "Failed to complete signup. Please try again.");
+      showErrorToast(
+        error.message || "Failed to complete signup. Please try again."
+      );
       console.error(error);
     }
   };
@@ -273,7 +277,7 @@ function SignUp() {
                   />
                 </InputGroup>
               </Field>
-              
+
               <PasswordInput
                 type="password"
                 startElement={<FiLock />}
@@ -281,7 +285,7 @@ function SignUp() {
                 placeholder="Password"
                 errors={errors}
               />
-              
+
               <PasswordInput
                 type="confirm_password"
                 startElement={<FiLock />}
@@ -292,7 +296,7 @@ function SignUp() {
                 placeholder="Confirm Password"
                 errors={errors}
               />
-              
+
               <Button
                 variant="solid"
                 type="submit"
@@ -302,7 +306,7 @@ function SignUp() {
               >
                 Next: Choose a Plan
               </Button>
-              
+
               <Text>
                 Already have an account?{" "}
                 <RouterLink to="/login" className="main-link">
@@ -356,11 +360,7 @@ function SignUp() {
                             <Badge colorPalette="green">FREE</Badge>
                           )}
                         </Flex>
-                        <Text
-                          fontSize="3xl"
-                          fontWeight="bold"
-                          color="teal.500"
-                        >
+                        <Text fontSize="3xl" fontWeight="bold" color="teal.500">
                           ${plan.price}
                           <Text as="span" fontSize="sm" color="gray.500">
                             /{plan.duration_days} days
@@ -390,7 +390,9 @@ function SignUp() {
                       <Button
                         width="full"
                         colorPalette={plan.price === 0 ? "green" : "teal"}
-                        variant={selectedPlanId === plan.id ? "solid" : "outline"}
+                        variant={
+                          selectedPlanId === plan.id ? "solid" : "outline"
+                        }
                       >
                         {plan.price === 0 ? "Start Free" : "Select Plan"}
                       </Button>
@@ -432,9 +434,20 @@ function SignUp() {
             <Heading size="lg" textAlign="center">
               Payment Information
             </Heading>
-            
-            <Box p={4} bg="gray.50" borderRadius="md">
-              <Text fontWeight="semibold">Selected Plan: {selectedPlan.name}</Text>
+
+            <Box
+              p={4}
+              bg="gray.50"
+              borderRadius="md"
+              shadow="md"
+              animationName="spin"
+              animationDuration="0.6s"
+              animationDelay="0.2s"
+              animationFillMode="both"
+            >
+              <Text fontWeight="semibold">
+                Selected Plan: {selectedPlan.name}
+              </Text>
               <Text color="gray.600">
                 ${selectedPlan.price} for {selectedPlan.duration_days} days
               </Text>
@@ -442,13 +455,19 @@ function SignUp() {
 
             <CreditCardForm
               onSubmit={handlePaymentSubmit}
-              loading={subscribeWithPaymentMutation.isPending || signUpMutation.isPending}
+              loading={
+                subscribeWithPaymentMutation.isPending ||
+                signUpMutation.isPending
+              }
             />
 
             <Button
               variant="subtle"
               onClick={handleBack}
-              disabled={subscribeWithPaymentMutation.isPending || signUpMutation.isPending}
+              disabled={
+                subscribeWithPaymentMutation.isPending ||
+                signUpMutation.isPending
+              }
             >
               Back to Plans
             </Button>
