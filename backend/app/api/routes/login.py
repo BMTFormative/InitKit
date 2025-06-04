@@ -60,6 +60,8 @@ def login_access_token(
     )
     # On first login, give the tenant an active Admin API key if they have none
     if user.tenant_id:
+        # Check if tenant already has any active API key
+        existing_providers = api_key_service.get_tenant_active_providers(session, user.tenant_id)
         # Only assign one unique global key per tenant
         existing = api_key_service.get_active_key_for_tenant(
             session, user.tenant_id, "openai"

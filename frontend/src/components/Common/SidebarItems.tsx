@@ -7,6 +7,7 @@ import {
   FiSettings,
   FiUsers,
   FiDollarSign,
+  FiFileText
 } from "react-icons/fi";
 import type { IconType } from "react-icons/lib";
 import { UserWithTenant } from "@/types/tenant";
@@ -14,6 +15,7 @@ import { UserWithTenant } from "@/types/tenant";
 const items = [
   { icon: FiHome, title: "Dashboard", path: "/" },
   { icon: FiBriefcase, title: "Items", path: "/items" },
+  { icon: FiFileText, title: "Job Postings", path: "/job-postings" },
   { icon: FiDollarSign, title: "Subscriptions", path: "/subscriptions" },
   { icon: FiSettings, title: "User Settings", path: "/settings" },
 ];

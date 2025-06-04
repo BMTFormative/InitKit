@@ -52,6 +52,7 @@ class Tenant(TenantBase, table=True):
     api_keys: list["TenantApiKey"] = Relationship(back_populates="tenant", cascade_delete=True)
     credit_ledger: list["CreditTransaction"] = Relationship(back_populates="tenant", cascade_delete=True)
     email_config: "EmailConfig" = Relationship(back_populates="tenant", sa_relationship_kwargs={"uselist": False})
+    job_templates: list["JobPostingTemplate"] = Relationship(back_populates="tenant")
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -395,3 +396,81 @@ class PaymentMethodPublic(SQLModel):
 
 class PaymentMethodCreate(SQLModel):
     stripe_payment_method_id: str
+
+# Job Posting Models - Add to your existing models.py
+
+class JobPostingTemplate(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)  # TENANT ISOLATION
+    created_by: uuid.UUID = Field(foreign_key="user.id")
+    name: str = Field(max_length=255)
+    description: str | None = Field(default=None, max_length=500)
+    
+    # Template fields matching your form
+    job_title_template: str | None = None
+    location_template: str | None = None
+    experience_level: str | None = None
+    employment_type: str | None = None
+    job_overview_template: str | None = None
+    responsibilities_template: str | None = None
+    required_skills_template: str | None = None
+    benefits_template: str | None = None
+    platform_default: str = Field(default="LinkedIn")
+    
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    tenant: Tenant = Relationship(back_populates="job_templates")
+    creator: User = Relationship()
+    job_postings: list["JobPosting"] = Relationship(back_populates="template")
+
+class JobPosting(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)  # TENANT ISOLATION
+    created_by: uuid.UUID = Field(foreign_key="user.id")
+    template_id: uuid.UUID | None = Field(foreign_key="jobpostingtemplate.id", nullable=True)
+    
+    # Job posting data (matches your form fields)
+    job_title: str = Field(max_length=255)
+    location: str | None = None
+    experience_level: str | None = None
+    employment_type: str | None = None
+    job_overview: str | None = None
+    responsibilities: list[str] = Field(default=[], sa_column=Column(JSON))
+    team_intro: str | None = None
+    required_skills: str | None = None
+    education_requirements: str | None = None
+    certifications: str | None = None
+    
+    # Compensation
+    include_salary: bool = Field(default=False)
+    salary_range: str | None = None
+    benefits: list[str] = Field(default=[], sa_column=Column(JSON))
+    perks: str | None = None
+    
+    # Publication settings
+    platform: str = Field(default="LinkedIn")
+    length: str = Field(default="standard")
+    application_deadline_days: int | None = None
+    application_deadline_date: datetime | None = None
+    keywords: str | None = None
+    
+    # Generated content
+    generated_content: str | None = None
+    quality_score: int | None = None
+    ai_suggestions: list[str] = Field(default=[], sa_column=Column(JSON))
+    
+    # Status and usage
+    status: str = Field(default="draft")  # draft, published, archived
+    credits_used: float = Field(default=0.0)
+    generation_model: str | None = None
+    
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    tenant: Tenant = Relationship()
+    creator: User = Relationship()
+    template: JobPostingTemplate | None = Relationship(back_populates="job_postings")
