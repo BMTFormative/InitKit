@@ -10,7 +10,7 @@ import {
   HStack,
   Dialog
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SubscriptionsService, type ApiError } from "@/client";
 import { PaymentService } from "@/services/payment-service";
@@ -26,6 +26,26 @@ const SubscriptionPlans = () => {
   // State for payment modal
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // Fix scroll lock issue
+  useEffect(() => {
+    const handleScrollLock = () => {
+      if (showPaymentModal) {
+        // Ensure body can still scroll when modal is open if needed
+        document.body.style.overflowY = 'hidden';
+      } else {
+        // Restore scroll when modal closes
+        document.body.style.overflowY = 'auto';
+      }
+    };
+
+    handleScrollLock();
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflowY = 'auto';
+    };
+  }, [showPaymentModal]);
 
   const { data: plans, isLoading } = useQuery({
     queryKey: ["subscription-plans"],
@@ -59,8 +79,7 @@ const SubscriptionPlans = () => {
     onSuccess: () => {
       showSuccessToast("Successfully subscribed to plan");
       queryClient.invalidateQueries({ queryKey: ["my-subscription"] });
-      setShowPaymentModal(false);
-      setSelectedPlan(null);
+      closeModal();
     },
     onError: (err: ApiError) => {
       handleError(err);
@@ -76,6 +95,15 @@ const SubscriptionPlans = () => {
       setSelectedPlan(plan);
       setShowPaymentModal(true);
     }
+  };
+
+  const closeModal = () => {
+    setShowPaymentModal(false);
+    setSelectedPlan(null);
+    // Force scroll restoration
+    setTimeout(() => {
+      document.body.style.overflowY = 'auto';
+    }, 100);
   };
 
   const handlePaymentSubmit = (paymentMethodId: string) => {
@@ -191,46 +219,51 @@ const SubscriptionPlans = () => {
         open={showPaymentModal} 
         onOpenChange={({ open }) => {
           if (!open) {
-            setShowPaymentModal(false);
-            setSelectedPlan(null);
+            closeModal();
           }
         }}
       >
-        <Dialog.Content>
-          <Dialog.Header>
-            <Dialog.Title>Complete Your Subscription</Dialog.Title>
-          </Dialog.Header>
-          
-          <Dialog.Body>
-            {selectedPlan && (
-              <VStack gap={4} align="stretch">
-                <Box p={4} borderRadius="md" bg="gray.50">
-                  <Text fontWeight="semibold">{selectedPlan.name}</Text>
-                  <Text fontSize="lg" color="teal.500">
-                    ${selectedPlan.price}/{selectedPlan.duration_days} days
-                  </Text>
-                </Box>
-                
-                <CreditCardForm
-                  onSubmit={handlePaymentSubmit}
-                  loading={paidSubscribeMutation.isPending}
-                />
-              </VStack>
-            )}
-          </Dialog.Body>
-          
-          <Dialog.Footer>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowPaymentModal(false);
-                setSelectedPlan(null);
-              }}
-            >
-              Cancel
-            </Button>
-          </Dialog.Footer>
-        </Dialog.Content>
+        <Dialog.Backdrop />
+        <Dialog.Positioner>
+          <Dialog.Content
+            maxW="md"
+            maxH="90vh"
+            css={{
+              overflowY: "auto",
+            }}
+          >
+            <Dialog.Header>
+              <Dialog.Title>Complete Your Subscription</Dialog.Title>
+            </Dialog.Header>
+            
+            <Dialog.Body>
+              {selectedPlan && (
+                <VStack gap={4} align="stretch">
+                  <Box p={4} borderRadius="md" bg="gray.50">
+                    <Text fontWeight="semibold">{selectedPlan.name}</Text>
+                    <Text fontSize="lg" color="teal.500">
+                      ${selectedPlan.price}/{selectedPlan.duration_days} days
+                    </Text>
+                  </Box>
+                  
+                  <CreditCardForm
+                    onSubmit={handlePaymentSubmit}
+                    loading={paidSubscribeMutation.isPending}
+                  />
+                </VStack>
+              )}
+            </Dialog.Body>
+            
+            <Dialog.Footer>
+              <Button
+                variant="outline"
+                onClick={closeModal}
+              >
+                Cancel
+              </Button>
+            </Dialog.Footer>
+          </Dialog.Content>
+        </Dialog.Positioner>
       </Dialog.Root>
     </>
   );
