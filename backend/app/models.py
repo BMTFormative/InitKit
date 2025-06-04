@@ -474,3 +474,7 @@ class JobPosting(SQLModel, table=True):
     tenant: Tenant = Relationship()
     creator: User = Relationship()
     template: JobPostingTemplate | None = Relationship(back_populates="job_postings")
+
+    # AI Generation metadata (add these fields)
+    generation_metadata: dict = Field(default={}, sa_column=Column(JSON))
+    knowledge_sources: list[str] = Field(default=[], sa_column=Column(JSON))

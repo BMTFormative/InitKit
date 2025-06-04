@@ -118,6 +118,14 @@ class Settings(BaseSettings):
         )
 
         return self
-
+    # Claude AI Configuration
+    CLAUDE_API_KEY: str | None = None
+    CLAUDE_DEFAULT_MODEL: str = "claude-3-5-sonnet-20241022"
+    CLAUDE_MAX_TOKENS: int = 4096
+    CLAUDE_TEMPERATURE: float = 0.7
+    
+    # Job Posting Generation Settings
+    JOB_POSTING_GENERATION_COST: float = 5.0  # Credits per generation
+    JOB_POSTING_ANALYSIS_COST: float = 2.0    # Credits per analysis
 
 settings = Settings()  # type: ignore

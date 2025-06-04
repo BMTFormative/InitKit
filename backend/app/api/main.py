@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.api.routes import (
     items, login, private, users, utils, subscriptions,
-    tenants, tenant_users, tenant_api_keys, tenant_credits, ai_proxy, tenant_email_config
+    tenants, tenant_users, tenant_api_keys, tenant_credits, ai_proxy, tenant_email_config,job_postings
 )
 from app.api.routes import admin_api_keys, admin_tenant_api_keys
 from app.core.config import settings
@@ -19,6 +19,7 @@ api_router.include_router(tenant_email_config.router)
 api_router.include_router(tenant_users.router)
 api_router.include_router(tenant_api_keys.router)
 api_router.include_router(tenant_credits.router)
+api_router.include_router(job_postings.router)
 api_router.include_router(ai_proxy.router, prefix="/ai-proxy", tags=["ai proxy"])
 # Global API keys for super-admins
 api_router.include_router(admin_api_keys.router)

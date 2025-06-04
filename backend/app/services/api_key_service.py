@@ -3,6 +3,7 @@ from cryptography.fernet import Fernet
 from sqlmodel import Session, select
 from datetime import datetime
 import uuid
+from typing import Tuple, List
 
 from app.models import TenantApiKey, AdminApiKey
 
@@ -81,6 +82,54 @@ class ApiKeyService:
         session.commit()
         
         return self.decrypt_key(api_key.encrypted_key)
+    
+    def get_tenant_active_providers(
+        self,
+        session: Session,
+        tenant_id: uuid.UUID
+    ) -> List[str]:
+        """
+        Get list of providers that tenant already has active keys for
+        
+        Returns:
+            List of provider names (e.g., ['openai', 'anthropic'])
+        """
+        statement = select(TenantApiKey.provider).where(
+            TenantApiKey.tenant_id == tenant_id,
+            TenantApiKey.is_active == True
+        )
+        providers = session.exec(statement).all()
+        return list(providers)
+    
+    def consume_next_available_admin_key(
+        self,
+        session: Session
+    ) -> Tuple[str, str] | None:
+        """
+        Get the next available admin API key from any provider and mark it as consumed
+        
+        Returns:
+            Tuple of (provider, api_key) or None if no keys available
+        """
+        # Fetch the next unassigned (inactive) admin key from any provider
+        stmt = select(AdminApiKey).where(
+            AdminApiKey.is_active == False
+        ).order_by(AdminApiKey.created_at)
+        
+        admin_key = session.exec(stmt).first()
+        if not admin_key:
+            return None
+        
+        # Get the raw key value and mark as consumed
+        raw_key = self.decrypt_key(admin_key.encrypted_key)
+        provider = admin_key.provider
+        
+        # Mark as active (consumed)
+        admin_key.is_active = True
+        session.add(admin_key)
+        session.commit()
+        
+        return (provider, raw_key)
     
     def create_admin_api_key(
         self,
