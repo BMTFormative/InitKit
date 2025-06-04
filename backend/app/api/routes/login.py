@@ -58,23 +58,27 @@ def login_access_token(
     token_str = security.create_access_token(
         token_data, expires_delta=access_token_expires
     )
-    # On first login, give the tenant an active Admin API key if they have none
+    
+    # On first login, give the tenant an available Admin API key if they have none
     if user.tenant_id:
-        # Check if tenant already has any active API key
-        existing_providers = api_key_service.get_tenant_active_providers(session, user.tenant_id)
-        # Only assign one unique global key per tenant
-        existing = api_key_service.get_active_key_for_tenant(
-            session, user.tenant_id, "openai"
+        # Check if tenant already has any active API keys
+        existing_providers = api_key_service.get_tenant_active_providers(
+            session, user.tenant_id
         )
-        if not existing:
-            # Consume the next available Admin API key for this provider
-            raw_key = api_key_service.consume_admin_api_key(
-                session, "openai"
-            )
-            if raw_key:
+        
+        if not existing_providers:
+            # Get the first available admin API key from any provider
+            admin_key_info = api_key_service.consume_next_available_admin_key(session)
+            
+            if admin_key_info:
+                provider, raw_key = admin_key_info
                 api_key_service.create_tenant_api_key(
-                    session, user.tenant_id, "openai", raw_key
+                    session, user.tenant_id, provider, raw_key
                 )
+                print(f"Auto-assigned {provider} API key to tenant {user.tenant_id}")
+            else:
+                print(f"No available admin API keys to assign to tenant {user.tenant_id}")
+    
     return Token(access_token=token_str)
 
 
@@ -157,6 +161,8 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
     return HTMLResponse(
         content=email_data.html_content, headers={"subject:": email_data.subject}
     )
+
+
 @router.post("/login/accept-invitation", response_model=UserPublic)
 def accept_invitation(
     session: SessionDep,
