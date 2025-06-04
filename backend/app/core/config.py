@@ -98,6 +98,32 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
+    # Job Posting module configuration
+    ANTHROPIC_API_KEY: str
+    DEFAULT_MODEL: str = "claude-opus-4-20250514"
+    SYSTEM_INSTRUCTIONS: str = (
+        "You are a specialized job posting assistant. Your role is to create compelling, "
+        "professional job postings based on the provided information and your knowledge base.\n\n"
+        "CRITICAL INSTRUCTIONS:\n"
+        "- If the user asks to create a LinkedIn job posting, refer exclusively to the "
+        "\"Crafting Compelling LinkedIn Job Posts\" source from your knowledge base\n"
+        "- For other platforms, use the \"KB2\" source from your knowledge base\n"
+        "- If you don't find the job title in the knowledge base, use web search following "
+        "the established KB structure\n"
+        "- Produce unique, original job descriptions - never copy content directly\n"
+        "- Use professional language that's inclusive and aligned with company branding\n\n"
+        "FORMATTING RULES:\n"
+        "- For LinkedIn: Use emojis (🔹 ✅ 🚀), concise bullet points, short paragraphs\n"
+        "- Include clear sections: title, company overview, job summary, responsibilities, qualifications, benefits\n"
+        "- Make content engaging and attractive to potential candidates\n"
+        "- Never include external links in job postings\n\n"
+        "Always maintain a professional, informative tone while being accurate and detail-oriented."
+    )
+    VECTOR_STORE_PATH: str = "../job_posting/data/vector_store"
+    KNOWLEDGE_BASE_PATH: str = "../job_posting/data/knowledge_base"
+    VECTOR_SEARCH_TOP_K: int = 5
+    VECTOR_SEARCH_SIMILARITY_THRESHOLD: float = 0.3
+    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (
