@@ -4,8 +4,6 @@ from typing import Dict, Any, Optional
 from anthropic import Anthropic, APIStatusError
 from app.core.config import settings
 
-# Load job posting configuration from core settings
-ANTHROPIC_API_KEY = settings.ANTHROPIC_API_KEY
 DEFAULT_MODEL = settings.DEFAULT_MODEL
 SYSTEM_INSTRUCTIONS = settings.SYSTEM_INSTRUCTIONS
 
@@ -16,11 +14,14 @@ class QuotaExceededError(Exception):
     pass
 
 class ClaudeAPI:
-    def __init__(self):
+    def __init__(self, api_key: str | None = None):
+        # Determine which API key to use: provided key or default from settings
+        key_to_use = api_key if api_key is not None else settings.ANTHROPIC_API_KEY
+        if not key_to_use:
+            raise ValueError("No Anthropic API key provided. Please configure a tenant API key.")
         # Initialize Claude client
-        self.client = Anthropic(api_key=ANTHROPIC_API_KEY)
+        self.client = Anthropic(api_key=key_to_use)
         logger.info("Claude client initialized successfully")
-        
         # Configuration for content generation
         self.generation_config: Dict[str, Any] = {
             "max_tokens": 4096,

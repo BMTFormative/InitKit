@@ -395,3 +395,22 @@ class PaymentMethodPublic(SQLModel):
 
 class PaymentMethodCreate(SQLModel):
     stripe_payment_method_id: str
+    
+# Configuration for job posting module (singleton)
+class JobPostingConfigBase(SQLModel):
+    """
+    Base model for Job Posting configuration settings.
+    """
+    default_model: str = Field(..., description="Default Claude/Anthropic model to use")
+    vector_store_path: str = Field(..., description="Path to the vector store directory")
+    knowledge_base_path: str = Field(..., description="Path to the knowledge base directory")
+    vector_search_top_k: int = Field(..., description="Number of top results for vector search")
+    vector_search_similarity_threshold: float = Field(..., description="Similarity threshold for vector search")
+    embedding_model: str = Field(..., description="Embedding model for text embeddings")
+
+class JobPostingConfig(JobPostingConfigBase, table=True):
+    """
+    Singleton table holding dynamic configuration for the job posting module.
+    """
+    id: int = Field(default=1, primary_key=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, sa_column=Column(nullable=False))

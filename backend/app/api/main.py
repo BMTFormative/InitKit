@@ -6,6 +6,7 @@ from app.api.routes import (
 )
 from app.api.routes import admin_api_keys, admin_tenant_api_keys
 from app.api.routes import job_postings
+from app.api.routes.admin_job_posting_config import router as admin_job_posting_config_router
 from app.core.config import settings
 from app.api.routes import payment
 api_router = APIRouter()
@@ -24,6 +25,8 @@ api_router.include_router(ai_proxy.router, prefix="/ai-proxy", tags=["ai proxy"]
 api_router.include_router(admin_api_keys.router)
 # Tenant API keys across all tenants (super-admin only)
 api_router.include_router(admin_tenant_api_keys.router)
+# Job Posting configuration (super-admin only)
+api_router.include_router(admin_job_posting_config_router)
 # Job Posting module endpoints
 api_router.include_router(job_postings.router, prefix="/job_postings", tags=["job_postings"])
 

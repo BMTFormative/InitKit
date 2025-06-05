@@ -3,11 +3,19 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel, Field, Extra
 from typing import Any, Dict, Optional
 
+# Dependencies for dynamic API key retrieval
+from app.api.deps import SessionDep, CurrentUserWithTenant
+from app.services.api_key_service import ApiKeyService
+from app.core.config import settings
+
 # Internal Job Posting modules
 from app.modules.job_posting.chat_manager import ChatManager
 from app.modules.job_posting.claude_api import ClaudeAPI
 from app.modules.job_posting.knowledge_base import KnowledgeBaseManager
 from app.modules.job_posting.intelligent_enhancement import IntelligentJobEnhancer
+
+# For dynamic configuration of job posting behavior
+from app.services.job_posting_config import get_job_posting_config, create_job_posting_config
 
 router = APIRouter()
 
@@ -23,7 +31,6 @@ class GenerateJobPostingRequest(BaseModel, extra=Extra.allow):
 chat_manager = ChatManager()
 kb_manager = KnowledgeBaseManager()
 intelligent_enhancer = IntelligentJobEnhancer(kb_manager)
-claude_api = ClaudeAPI()
 
 @router.get("/health")
 async def health_check():
@@ -32,7 +39,9 @@ async def health_check():
 
 @router.post("/generate")
 async def generate_job_posting(
-    payload: GenerateJobPostingRequest = Body(...)
+    session: SessionDep,
+    current_data: CurrentUserWithTenant,
+    payload: GenerateJobPostingRequest = Body(...),
 ):
     """Generate a job posting using the integrated module."""
     data: Dict[str, Any] = payload.dict()
@@ -43,6 +52,23 @@ async def generate_job_posting(
     # Enhance the job posting context
     enhancement = intelligent_enhancer.analyze_and_enhance(data)
     context = enhancement.get("enhanced_context", "")
+
+    # Retrieve tenant information
+    user, tenant_id, role = current_data
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="No tenant associated with user")
+
+    # Fetch the active API key for the tenant
+    api_key_service = ApiKeyService(settings.API_KEY_ENCRYPTION_KEY)
+    api_key = api_key_service.get_active_key_for_tenant(session, tenant_id, provider="anthropic")
+    if not api_key:
+        raise HTTPException(status_code=400, detail="No active API key for tenant")
+
+    # Initialize Claude client with tenant API key and dynamic model from config
+    config = get_job_posting_config(session)
+    if not config:
+        config = create_job_posting_config(session)
+    claude_api = ClaudeAPI(api_key=api_key, model=config.default_model)
 
     # Stream response chunks from Claude
     async def event_stream():

@@ -28,7 +28,6 @@ backend/app/modules/job_posting/
 
 2. **Environment variables** (add to `backend/.env` or one level above `backend/app/`):
    ```env
-   ANTHROPIC_API_KEY=<your_claude_api_key>
    CLAUDE_MODEL=claude-opus-4-20250514
    VECTOR_STORE_PATH=../job_posting/data/vector_store
    KNOWLEDGE_BASE_PATH=../job_posting/data/knowledge_base
@@ -36,6 +35,8 @@ backend/app/modules/job_posting/
    VECTOR_SEARCH_SIMILARITY_THRESHOLD=0.3
    EMBEDDING_MODEL=all-MiniLM-L6-v2
    ```
+   
+   *Note*: Claude (Anthropic) API keys are managed per tenant via the Tenant API Keys endpoints and stored in the `tenant_api_keys` table. No need to set `ANTHROPIC_API_KEY` in environment variables.
 
 3. Confirm that `backend/pyproject.toml` lists these libraries under `[project].dependencies`.
 

@@ -99,7 +99,8 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str
 
     # Job Posting module configuration
-    ANTHROPIC_API_KEY: str
+    # API key for Claude (Anthropic) can be provided via environment or fetched per tenant from DB
+    ANTHROPIC_API_KEY: str | None = None
     DEFAULT_MODEL: str = "claude-opus-4-20250514"
     SYSTEM_INSTRUCTIONS: str = (
         "You are a specialized job posting assistant. Your role is to create compelling, "
