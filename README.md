@@ -140,6 +140,44 @@ You can (and should) pass these as environment variables from secrets.
 
 Read the [deployment.md](./deployment.md) docs for more details.
 
+### Database Setup (Custom Tables)
+
+If you have existing PostgreSQL tables (for example, a `user` table) and you want to run this project against them, follow these steps:
+
+1. Create a top-level `.env` file (next to `docker-compose.yml` or above the `backend/` folder) with your database and superuser settings:
+
+   ```ini
+   POSTGRES_SERVER=<your-db-host>
+   POSTGRES_PORT=<your-db-port>
+   POSTGRES_USER=<your-db-user>
+   POSTGRES_PASSWORD=<your-db-password>
+   POSTGRES_DB=<your-db-name>
+   FIRST_SUPERUSER=<admin-email>
+   FIRST_SUPERUSER_PASSWORD=<admin-password>
+   # (add any other required environment variables)
+   ```
+
+2. Make sure the `User` model in `backend/app/models.py` matches your existing `user` table schema. Adjust field names, types, or constraints if necessary.
+
+3. (Optional) To auto-create missing tables on startup, uncomment `SQLModel.metadata.create_all(engine)` in `backend/app/core/db.py`.
+
+4. Seed the initial superuser by running:
+
+   ```bash
+   cd backend
+   python3 -m app.initial_data
+   ```
+
+5. Install dependencies and start the server:
+
+   ```bash
+   cd backend
+   poetry install           # or pip install -r requirements.txt
+   uvicorn app.main:app --reload
+   ```
+
+6. You should now be able to authenticate and call the `/api/v1/users` endpoints (for example, `GET /api/v1/users/me`).
+
 ### Generate Secret Keys
 
 Some environment variables in the `.env` file have a default value of `changethis`.
