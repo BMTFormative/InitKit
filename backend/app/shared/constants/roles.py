@@ -4,8 +4,7 @@ Role and status constants
 
 # User roles
 class UserRoles:
-    SUPERADMIN = "superadmin"
-    TENANT_ADMIN = "tenant_admin"
+    ADMIN = "admin"
     USER = "user"
 
 # Subscription statuses

@@ -1,4 +1,3 @@
-import uuid
 from collections.abc import Generator
 from typing import Annotated
 
@@ -56,36 +55,4 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
             status_code=403, detail="The user doesn't have enough privileges"
         )
     return current_user
-
-def get_current_user_with_tenant(
-    session: SessionDep, 
-    token: TokenDep
-) -> tuple[User, uuid.UUID | None, str]:
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
-        )
-        token_data = TokenPayload(**payload)
-        user_id = token_data.sub
-        tenant_id = token_data.tenant_id
-        role = token_data.role
-    except (InvalidTokenError, ValidationError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials",
-        )
-        
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
-        
-    # Ensure tenant_id from token matches user's tenant_id in database
-    if tenant_id and user.tenant_id and str(tenant_id) != str(user.tenant_id):
-        raise HTTPException(
-            status_code=403,
-            detail="Token tenant_id doesn't match user's tenant_id"
-        )
-        
-    return user, tenant_id, role
+

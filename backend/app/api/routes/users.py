@@ -19,7 +19,6 @@ from app.models import (
     User,
     UserCreate,
     UserPublic,
-    UserRegister,
     UsersPublic,
     UserUpdate,
     UserUpdateMe,
@@ -145,35 +144,6 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
 
 
 
-    """
-    Create new user without the need to be logged in.
-    """
-    # Check if user already exists
-    user = crud.get_user_by_email(session=session, email=user_in.email)
-    if user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this email already exists in the system",
-        )
-    
-    # Create a new tenant first
-    tenant_name = f"{user_in.full_name or user_in.email}'s Organization"
-    tenant = Tenant(
-        name=tenant_name,
-        description=f"Default tenant for {user_in.email}",
-        is_active=True
-    )
-    session.add(tenant)
-    session.flush()  # This assigns an ID to the tenant without committing
-    
-    # Create the user with the tenant_id and tenant_admin role
-    user_create = UserCreate.model_validate(user_in)
-    user_create.tenant_id = tenant.id
-    user_create.role = "tenant_admin"  # Make the user a tenant admin
-    
-    user = crud.create_user(session=session, user_create=user_create)
-    session.commit()
-    return user
   
 
 @router.get("/{user_id}", response_model=UserPublic)

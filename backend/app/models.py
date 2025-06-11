@@ -15,13 +15,8 @@ class UserBase(SQLModel):
 # Properties to receive via API on creation
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=40)
-    tenant_id: uuid.UUID | None = None
     role: str = Field(default="user")
 
-class UserRegister(SQLModel):
-    email: EmailStr = Field(max_length=255)
-    password: str = Field(min_length=8, max_length=40)
-    full_name: str | None = Field(default=None, max_length=255)
 
 
 # Properties to receive via API on update, all are optional
@@ -44,13 +39,12 @@ class UpdatePassword(SQLModel):
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
-    role: str = Field(max_length=20, default="user")  # "superadmin", "tenant_admin", "user"
+    role: str = Field(max_length=20, default="user")  # "admin", "user"
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
 
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
     id: uuid.UUID
-    tenant_id: uuid.UUID | None = None
     role: str
 
 
@@ -109,10 +103,6 @@ class Token(SQLModel):
 # Contents of JWT token
 class TokenPayload(SQLModel):
     sub: str | None = None
-    tenant_id: uuid.UUID | None = None
     role: str = "user"
 
 
-class NewPassword(SQLModel):
-    token: str
-    new_password: str = Field(min_length=8, max_length=40)
