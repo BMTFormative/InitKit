@@ -12,7 +12,7 @@ from sqlmodel import Session,select
 from app.core import security
 from app.core.config import settings
 from app.core.db import engine
-from app.models import TokenPayload, User, Tenant
+from app.models import TokenPayload, User
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
@@ -89,61 +89,3 @@ def get_current_user_with_tenant(
         )
         
     return user, tenant_id, role
-
-CurrentUserWithTenant = Annotated[tuple[User, uuid.UUID | None, str], Depends(get_current_user_with_tenant)]
-
-# Role-based dependencies
-def require_super_admin(current_data: CurrentUserWithTenant) -> User:
-    user, _, role = current_data
-    if role != "superadmin":
-        raise HTTPException(
-            status_code=403, 
-            detail="Super admin privileges required"
-        )
-    return user
-
-SuperAdminUser = Annotated[User, Depends(require_super_admin)]
-
-def require_tenant_admin(current_data: CurrentUserWithTenant) -> tuple[User, uuid.UUID]:
-    user, tenant_id, role = current_data
-    if role not in ["tenant_admin", "superadmin"]:
-        raise HTTPException(
-            status_code=403, 
-            detail="Tenant admin privileges required"
-        )
-    if not tenant_id and role != "superadmin":
-        raise HTTPException(
-            status_code=403, 
-            detail="No tenant associated with this user"
-        )
-    return user, tenant_id
-
-TenantAdminUser = Annotated[tuple[User, uuid.UUID], Depends(require_tenant_admin)]
-
-def require_same_tenant(
-    current_data: CurrentUserWithTenant, 
-    tenant_id_param: uuid.UUID
-) -> User:
-    user, tenant_id, role = current_data
-    if role == "superadmin":
-        return user
-    if str(tenant_id) != str(tenant_id_param):
-        raise HTTPException(
-            status_code=403, 
-            detail="Access denied to this tenant's resources"
-        )
-    return user
-
-def get_tenant_from_path(
-    tenant_id: uuid.UUID, 
-    session: SessionDep
-) -> Tenant:
-    tenant = session.get(Tenant, tenant_id)
-    if not tenant:
-        raise HTTPException(
-            status_code=404,
-            detail="Tenant not found"
-        )
-    return tenant
-
-TenantFromPath = Annotated[Tenant, Depends(get_tenant_from_path)]

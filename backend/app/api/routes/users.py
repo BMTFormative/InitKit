@@ -8,7 +8,6 @@ from app import crud
 from app.api.deps import (
     CurrentUser,
     SessionDep,
-    CurrentUserWithTenant,
     get_current_active_superuser,
 )
 from app.core.config import settings
@@ -16,7 +15,6 @@ from app.core.security import get_password_hash, verify_password
 from app.models import (
     Item,
     Message,
-    Tenant,
     UpdatePassword,
     User,
     UserCreate,
@@ -27,7 +25,6 @@ from app.models import (
     UserUpdateMe,
 )
 from app.utils import generate_new_account_email, send_email
-from app.services.credit_service import CreditService
 from sqlmodel import SQLModel, Field
 
 # Response model for user credit balance
@@ -147,8 +144,7 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
     return Message(message="User deleted successfully")
 
 
-@router.post("/signup", response_model=UserPublic)
-def register_user(session: SessionDep, user_in: UserRegister) -> Any:
+
     """
     Create new user without the need to be logged in.
     """
@@ -179,48 +175,6 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     session.commit()
     return user
   
-@router.get("/me/credit-balance", response_model=CreditBalance)
-def read_credit_balance(
-    session: SessionDep,
-    current_user: CurrentUser,
-) -> Any:
-    """
-    Get current user's credit balance.
-    """
-    credit_service = CreditService()
-    balance = credit_service.get_user_balance(session, current_user.id)
-    return CreditBalance(balance=balance)
-    
-@router.get("/{user_id}/credit-balance", response_model=CreditBalance)
-def read_user_credit_balance(
-    user_id: uuid.UUID,
-    session: SessionDep,
-    current_data: CurrentUserWithTenant,
-) -> Any:
-    """
-    Get another user's credit balance (for superadmin or tenant admin).
-    """
-    current_user, tenant_id, role = current_data
-    # Fetch target user
-    target = session.get(User, user_id)
-    if not target:
-        raise HTTPException(status_code=404, detail="User not found")
-    # Allow self
-    if target.id == current_user.id:
-        pass
-    # Superadmin may view anyone
-    elif role == "superadmin":
-        pass
-    # Tenant admin may view users in same tenant
-    elif role == "tenant_admin" and tenant_id and target.tenant_id and str(target.tenant_id) == str(tenant_id):
-        pass
-    else:
-        raise HTTPException(status_code=403, detail="Not enough privileges to view credit balance")
-    # Return user-specific credit balance
-    balance = CreditService().get_user_balance(session, target.id)
-    return CreditBalance(balance=balance)
-  
-
 
 @router.get("/{user_id}", response_model=UserPublic)
 def read_user_by_id(
