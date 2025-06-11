@@ -11,7 +11,6 @@ from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models import Message, NewPassword, Token, UserPublic, UserCreate, User
-from sqlmodel import select
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
@@ -20,7 +19,6 @@ from app.utils import (
 )
 
 router = APIRouter(tags=["login"])
-
 
 
 @router.post("/login/access-token")
@@ -37,21 +35,21 @@ def login_access_token(
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+    
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    # Create token payload with role and tenant_id
-    # Use is_superuser to grant global super-admin role
+    # Simplified token creation for minimal setup
     token_data = {
         "sub": str(user.id),
-        "role": "superadmin" if user.is_superuser else user.role
+        "role": "admin" if user.is_superuser else "user"
     }
-    
-
     
     # Create the JWT
     token_str = security.create_access_token(
         token_data, expires_delta=access_token_expires
     )
+    
+    return Token(access_token=token_str)
 
 
 @router.post("/login/test-token", response_model=UserPublic)
@@ -133,19 +131,3 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
     return HTMLResponse(
         content=email_data.html_content, headers={"subject:": email_data.subject}
     )
-@router.post("/login/accept-invitation", response_model=UserPublic)
-def accept_invitation(
-    session: SessionDep,
-    token: str = Body(...),
-    user_data: UserCreate = Body(...),
-) -> User:
-    """
-    Accept an invitation and create a new user
-    """
-    invitation_service = InvitationService()
-    user = invitation_service.accept_invitation(
-        session=session,
-        token=token,
-        user_data=user_data
-    )
-    return user
