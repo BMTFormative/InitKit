@@ -1,0 +1,1 @@
+# Configuration package for Files API Job Posting Generator
